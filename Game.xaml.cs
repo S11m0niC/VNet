@@ -26,7 +26,7 @@ namespace VNet
 
 		private Assets.Assets _assets = new Assets.Assets();
 		private Script _currentScript;
-		private WriteableBitmap viewport;
+		private GameEnvironment _environment = new GameEnvironment();
 
 		public Game()
 		{
@@ -36,17 +36,12 @@ namespace VNet
 
 		private void Startup()
 		{
-			// Set rendering image
-			viewport = BitmapFactory.New((int)ViewportContainer.ActualWidth, (int)ViewportContainer.ActualHeight);
-			ViewportContainer.Source = viewport;
-
 			// Execute starting script
 			_currentScript = new Script(_StartScriptURI);
-			ProcessScript(_currentScript);
-			ExecuteScript(_currentScript, true);
+			ExecuteScript(_currentScript);
 		}
 
-		private void ExecuteScript(Script script, bool startupMode)
+		private void ExecuteScript(Script script)
 		{
 			LexicalAnalysis lexical = new LexicalAnalysis(script);
 
@@ -84,6 +79,8 @@ namespace VNet
 								{
 									quotedString += token.Lexem;
 								}
+								else if (lineComponents[0] == null)
+									lineComponents[0] = token.Lexem;
 								else if (lineComponents[1] == null)
 									lineComponents[1] = token.Lexem;
 								else if (lineComponents[2] == null)
@@ -107,7 +104,9 @@ namespace VNet
 								insideQuotes = !insideQuotes;
 								if (!insideQuotes)
 								{
-									if (lineComponents[2] == null)
+									if (lineComponents[1] == null)
+										lineComponents[1] = quotedString;
+									else if (lineComponents[2] == null)
 										lineComponents[2] = quotedString;
 									else if (lineComponents[3] == null)
 										lineComponents[3] = quotedString;
@@ -119,6 +118,13 @@ namespace VNet
 
 							// If punctuation is in quotes adds the character to string in quotes
 							case Type.Punctuation:
+								if (insideQuotes)
+								{
+									quotedString += token.Lexem;
+								}
+								break;
+
+							case Type.Whitespace:
 								if (insideQuotes)
 								{
 									quotedString += token.Lexem;
@@ -139,7 +145,15 @@ namespace VNet
 					}
 				}
 
-				ExecuteScriptLine(lineComponents);
+				// Determines if the line is a command or text line
+				if (Settings.KeywordList.Contains(lineComponents[0]))
+				{
+					ExecuteScriptLine(lineComponents);
+				}
+				else
+				{ 
+					ExecuteTextLine(lineComponents);
+				}
 			}
 		}
 
@@ -181,7 +195,7 @@ namespace VNet
 					{
 						ShowBackground(commands[1]);
 					}
-					// 
+					// More parameters, show as character
 					else if (commands[2] != null)
 					{
 						if (commands[3] != null)
@@ -197,9 +211,24 @@ namespace VNet
 			}
 		}
 
-		private void ProcessScript(Script script)
+		private void ExecuteTextLine(string[] commands)
 		{
+			// For protagonist
+			if (commands[0] == "PC")
+			{
+				if (commands[2] == "thought")
+				{
+					ShowTextBox("", commands[1], true);
+				}
+				ShowTextBox("", commands[1]);
+			}
 
+			// For other characters
+			Character selectedCharacter = _assets.characters.Find(i => i.name == commands[0]);
+			if (selectedCharacter != null)
+			{
+				ShowTextBox(selectedCharacter.name, commands[1]);
+			}
 		}
 
 		private void ShowBackground(string bgName)
@@ -207,34 +236,75 @@ namespace VNet
 			Background selectedBackground = _assets.backgrounds.Find(i => i.name == bgName);
 			if (selectedBackground != null)
 			{
-				ViewportContainer.Source = selectedBackground.image;
+				_environment.CurrentBackground = selectedBackground;
+
+				Image bg = new Image();
+				bg.Source = selectedBackground.image;
+				bg.Name = "bg";
+				ViewportContainer.Children.Add(bg);
+				Panel.SetZIndex(bg, 0);
 				_assets.SetBackgroundToShowing(selectedBackground.name);
 			}
 		}
 
 		private void ShowCharacter(string chName, string moodName, string position = "")
 		{
-			Point spriteLocation;
-			if (position == "left")
-			{
-				spriteLocation = new Point(320, 0);
-			}
-			else if (position == "right")
-			{
-				spriteLocation = new Point(640, 0);
-			}
-			else
-			{
-				spriteLocation = new Point(960, 0);
-			}
-
 			Character selectedCharacter = _assets.characters.Find(i => i.name == chName);
 			Mood selectedMood = selectedCharacter?.moods.Find(i => i.name == moodName);
 			if (selectedMood != null)
 			{
-				// TODO CREATE SPRITE IMAGE AND INSERT INTO WINDOW AT CORRECT POSITION
+				double xOffset;
+				double yOffset;
+				if (position == "left")
+				{
+					_environment.LeftCharacter = selectedCharacter;
+					xOffset = 0;
+					yOffset = 0;
+				}
+				else if (position == "right")
+				{
+					_environment.RightCharacter = selectedCharacter;
+					xOffset = 800;
+					yOffset = 0;
+				}
+				else
+				{
+					_environment.CenterCharacter = selectedCharacter;
+					xOffset = 420;
+					yOffset = 0;
+				}
+
+				Image character = new Image();
+				character.Name = "character";
+				character.Source = selectedMood.image;
+				ViewportContainer.Children.Add(character);
+				Canvas.SetLeft(character, xOffset);
+				Canvas.SetTop(character, yOffset);
+				Panel.SetZIndex(character, 1);
 			}
 		}
 
+		private void ShowTextBox(string characterName, string content, bool thought = false)
+		{
+			TextBlock text = new TextBlock();
+			text.Text = content;
+			text.Name = "text";
+			text.FontSize = 24;
+			if (!thought)
+			{
+				TextBlock name = new TextBlock();
+				name.Text = characterName;
+				name.Name = "name";
+				name.FontSize = 24;
+				ViewportContainer.Children.Add(name);
+				Panel.SetZIndex(name, 2);
+				Canvas.SetLeft(name, 120);
+				Canvas.SetTop(name, 600);
+			}
+			ViewportContainer.Children.Add(text);
+			Panel.SetZIndex(text, 2);
+			Canvas.SetLeft(text, 120);
+			Canvas.SetTop(text, 630);
+		}
 	}
 }

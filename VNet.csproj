@@ -63,6 +63,7 @@
     <Compile Include="Assets\Character.cs" />
     <Compile Include="Assets\Label.cs" />
     <Compile Include="Assets\Sound.cs" />
+    <Compile Include="GameEnvironment.cs" />
     <Compile Include="LexicalAnalysis.cs" />
     <Compile Include="Script.cs" />
     <Compile Include="Settings.cs" />

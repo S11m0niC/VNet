@@ -5,8 +5,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:VNet"
         mc:Ignorable="d"
-        Title="VNet" Height="720" Width="1280">
-    <Grid>
-        <Image Name="ViewportContainer"></Image>
-    </Grid>
+        Title="VNet" Height="720" Width="1280" ResizeMode="CanMinimize">
+    <Canvas Name="ViewportContainer">
+        
+    </Canvas>
 </Window>

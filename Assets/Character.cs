@@ -40,12 +40,12 @@ namespace VNet.Assets
 	public class Mood
 	{
 		public string name;
-		public BitmapImage image;
+		public WriteableBitmap image;
 
 		public Mood(string name, string imagePath)
 		{
 			this.name = name;
-			this.image = new BitmapImage(new Uri(imagePath, UriKind.Relative));
+			this.image = new WriteableBitmap(new BitmapImage(new Uri(imagePath, UriKind.Absolute)));
 		}
 	}
 }

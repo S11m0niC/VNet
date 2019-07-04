@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -24,13 +25,13 @@ namespace VNet.Assets
 
 		public void CreateCharacter(string name, string moodName, string imagePath)
 		{
-			var character = new Character(name, moodName, imagePath);
+			var character = new Character(name, moodName, ConvertToAbsolutePath(imagePath));
 			characters.Add(character);
 		}
 
 		public void CreateCharacter(string name, string imagePath)
 		{
-			var character = new Character(name, imagePath);
+			var character = new Character(name, ConvertToAbsolutePath(imagePath));
 			characters.Add(character);
 		}
 
@@ -49,15 +50,15 @@ namespace VNet.Assets
 
 		public void CreateBackground(string name, string imagePath)
 		{
-			var image = new BitmapImage(new Uri(imagePath, UriKind.Relative));
-			var background = new Background(name, image);
+			var image = new BitmapImage(new Uri(ConvertToAbsolutePath(imagePath), UriKind.Absolute));
+			var background = new Background(name, new WriteableBitmap(image));
 			backgrounds.Add(background);
 		}
 
 		public void AddImageToCharacter(string charName, string moodName, string imagePath)
 		{
 			var selectedCharacter = characters.Find(i => i.name == charName);
-			selectedCharacter?.AddMoodImage(moodName, imagePath);
+			selectedCharacter?.AddMoodImage(moodName, ConvertToAbsolutePath(imagePath));
 		}
 
 		public void SetBackgroundToShowing(string name)
@@ -69,6 +70,11 @@ namespace VNet.Assets
 				else
 					bg.onScreen = false;
 			}
+		}
+
+		public string ConvertToAbsolutePath(string relativePath)
+		{
+			return System.IO.Path.GetFullPath(relativePath);
 		}
 	}
 }

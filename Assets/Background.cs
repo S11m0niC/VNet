@@ -11,10 +11,10 @@ namespace VNet.Assets
 	public class Background
 	{
 		public string name;
-		public BitmapImage image;
+		public WriteableBitmap image;
 		public bool onScreen = false;
 
-		public Background(string name, BitmapImage image)
+		public Background(string name, WriteableBitmap image)
 		{
 			this.name = name;
 			this.image = image;
