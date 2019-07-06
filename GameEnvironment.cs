@@ -16,9 +16,7 @@ namespace VNet
 	public class GameEnvironment
 	{
 		private readonly Background _defaultBackground;
-
 		private Background _currentBackground;
-
 		private string _displayedText;
 
 		public Background CurrentBackground
@@ -27,9 +25,7 @@ namespace VNet
 			set => _currentBackground = value;
 		}
 		public Character LeftCharacter { get; set; }
-
 		public Character CenterCharacter { get; set; }
-
 		public Character RightCharacter { get; set; }
 
 		public string DisplayedText

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -24,11 +25,19 @@ namespace VNet
 		private const string _ScriptExtension = "vnets";
 		private const string _StartScriptURI = "./game." + _ScriptExtension;
 
-		private Assets.Assets _assets = new Assets.Assets();
+		private Assets.Assets _assets;
 		private Script _currentScript;
-		private GameEnvironment _environment = new GameEnvironment();
+		private LexicalAnalysis _lexical;
+		private GameEnvironment _environment;
+		
+		private TextBlock _textBlock;
+		private TextBlock _nameBlock;
+		private Image _backgroundImage;
+		private Image _leftCharacter;
+		private Image _rightCharacter;
+		private Image _centerCharacter;
 
-		public Game()
+	public Game()
 		{
 			InitializeComponent();
 			Startup();
@@ -36,134 +45,183 @@ namespace VNet
 
 		private void Startup()
 		{
+			// Prepare the game area
+			_environment = new GameEnvironment();
+			_assets = new Assets.Assets();
+
+			_backgroundImage = new Image();
+			_backgroundImage.Name = "backgroundImage";
+			_backgroundImage.Source = _environment.CurrentBackground.image;
+			ViewportContainer.Children.Add(_backgroundImage);
+			Panel.SetZIndex(_backgroundImage, 0);
+
+			_leftCharacter = new Image
+				{ Name = "leftCharacter", Opacity = 0.0 };
+			ViewportContainer.Children.Add(_leftCharacter);
+			Panel.SetZIndex(_leftCharacter, 1);
+
+			_centerCharacter = new Image
+				{ Name = "centerCharacter", Opacity = 0.0 };
+			ViewportContainer.Children.Add(_centerCharacter);
+			Panel.SetZIndex(_centerCharacter, 1);
+
+			_rightCharacter = new Image
+				{ Name = "rightCharacter", Opacity = 0.0 };
+			ViewportContainer.Children.Add(_rightCharacter);
+			Panel.SetZIndex(_rightCharacter, 1);
+
+			_nameBlock = new TextBlock
+				{ Name = "nameBlock", FontSize = 24, FontWeight = FontWeights.ExtraBold, Foreground = new LinearGradientBrush(Colors.AliceBlue, Colors.Aquamarine, 90.0)};
+			ViewportContainer.Children.Add(_nameBlock);
+			Canvas.SetLeft(_nameBlock, 240);
+			Canvas.SetTop(_nameBlock, 600);
+			Panel.SetZIndex(_nameBlock, 2);
+
+			_textBlock = new TextBlock
+				{ Name = "textBlock", FontSize = 27, FontWeight = FontWeights.Bold, Foreground = new SolidColorBrush(Colors.WhiteSmoke)};
+			ViewportContainer.Children.Add(_textBlock);
+			Canvas.SetLeft(_textBlock, 240);
+			Canvas.SetTop(_textBlock, 630);
+			Panel.SetZIndex(_textBlock, 2);
+
 			// Execute starting script
 			_currentScript = new Script(_StartScriptURI);
-			ExecuteScript(_currentScript);
+			_lexical = new LexicalAnalysis(_currentScript);
+			ProcessScript();
 		}
 
-		private void ExecuteScript(Script script)
+		/*
+		 * Function executes script from start to first displayable line (text, image...)
+		 */
+		private void ProcessScript()
 		{
-			LexicalAnalysis lexical = new LexicalAnalysis(script);
+			while(true)
+			{
+				string[] command = ProcessScriptLine();
+				if (command == null) return;
+				if (Settings.SetupKeywordList.Contains(command[0]))
+				{
+					ExecuteCommand(command);
+				}
+				else
+				{
+					_currentScript.currentLine--;
+					return;
+				}
+			}
+		}
 
-			// Loop for processing lines
+		private string[] ProcessScriptLine()
+		{
+			Token token = _lexical.GetNextToken();
+			if (token.Type == Type.Eof) return null;
+			if (token.Type == Type.LexError)
+			{
+				// TODO implement lex error recovery
+			}
+
+			bool insideQuotes = false;
+			string quotedString = "";
+
+			string[] lineComponents = new string[5];
+
 			while (true)
 			{
-				Token token = lexical.GetNextToken();
+				try
+				{
+					switch (token.Type)
+					{
+						// Sets the "command" for this line
+						case Type.Keyword:
+							if (lineComponents[0] != null)
+								throw new Exception(token.Location.Line.ToString());
+							lineComponents[0] = token.Lexem;
+							break;
+						// If word is in quotes adds to string in quotes, otherwise puts the word in first empty spot of command
+						case Type.Word:
+							if (insideQuotes)
+							{
+								quotedString += token.Lexem;
+							}
+							else if (lineComponents[0] == null)
+								lineComponents[0] = token.Lexem;
+							else if (lineComponents[1] == null)
+								lineComponents[1] = token.Lexem;
+							else if (lineComponents[2] == null)
+								lineComponents[2] = token.Lexem;
+							else if (lineComponents[3] == null)
+								lineComponents[3] = token.Lexem;
+							else if (lineComponents[4] == null)
+								lineComponents[4] = token.Lexem;
+							break;
+
+						// If number is in quotes adds to string in quotes
+						case Type.Number:
+							if (insideQuotes)
+							{
+								quotedString += token.Lexem;
+							}
+							break;
+
+						// If it is an opening quote starts adding following elements to quoted string, otherwise closes quote and adds whole string to first available variable slot
+						case Type.Quote:
+							insideQuotes = !insideQuotes;
+							if (!insideQuotes)
+							{
+								if (lineComponents[0] == null)
+									lineComponents[0] = quotedString;
+								else if (lineComponents[1] == null)
+									lineComponents[1] = quotedString;
+								else if (lineComponents[2] == null)
+									lineComponents[2] = quotedString;
+								else if (lineComponents[3] == null)
+									lineComponents[3] = quotedString;
+								else if (lineComponents[4] == null)
+									lineComponents[4] = quotedString;
+								quotedString = "";
+							}
+							break;
+
+						// If punctuation is in quotes adds the character to string in quotes
+						case Type.Punctuation:
+							if (insideQuotes)
+							{
+								quotedString += token.Lexem;
+							}
+							break;
+
+						case Type.Whitespace:
+							if (insideQuotes)
+							{
+								quotedString += token.Lexem;
+							}
+							break;
+					}
+				}
+				catch (Exception e)
+				{
+					MessageBox.Show("Error in script on line " + e.Message);
+				}
+				token = _lexical.GetNextToken();
+				if (token.Type == Type.NewLine) break;
 				if (token.Type == Type.Eof) break;
 				if (token.Type == Type.LexError)
 				{
-					// TODO implement lex error recovery
-				}
-
-				bool insideQuotes = false;
-				string quotedString = "";
-
-				string[] lineComponents = new string[5];
-
-				while (true)
-				{
-					try
-					{
-						switch (token.Type)
-						{
-							// Sets the "command" for this line
-							case Type.Keyword:
-								if (lineComponents[0] != null)
-									throw new Exception(token.Location.Line.ToString());
-								lineComponents[0] = token.Lexem;
-								break;
-
-							// If word is in quotes adds to string in quotes, otherwise puts the word in first empty spot of command
-							case Type.Word:
-								if (insideQuotes)
-								{
-									quotedString += token.Lexem;
-								}
-								else if (lineComponents[0] == null)
-									lineComponents[0] = token.Lexem;
-								else if (lineComponents[1] == null)
-									lineComponents[1] = token.Lexem;
-								else if (lineComponents[2] == null)
-									lineComponents[2] = token.Lexem;
-								else if (lineComponents[3] == null)
-									lineComponents[3] = token.Lexem;
-								else if (lineComponents[4] == null)
-									lineComponents[4] = token.Lexem;
-								break;
-
-							// If number is in quotes adds to string in quotes
-							case Type.Number:
-								if (insideQuotes)
-								{
-									quotedString += token.Lexem;
-								}
-								break;
-
-							// If it is an opening quote starts adding following elements to quoted string, otherwise closes quote and adds whole string to first available variable slot
-							case Type.Quote:
-								insideQuotes = !insideQuotes;
-								if (!insideQuotes)
-								{
-									if (lineComponents[1] == null)
-										lineComponents[1] = quotedString;
-									else if (lineComponents[2] == null)
-										lineComponents[2] = quotedString;
-									else if (lineComponents[3] == null)
-										lineComponents[3] = quotedString;
-									else if (lineComponents[4] == null)
-										lineComponents[4] = quotedString;
-									quotedString = "";
-								}
-								break;
-
-							// If punctuation is in quotes adds the character to string in quotes
-							case Type.Punctuation:
-								if (insideQuotes)
-								{
-									quotedString += token.Lexem;
-								}
-								break;
-
-							case Type.Whitespace:
-								if (insideQuotes)
-								{
-									quotedString += token.Lexem;
-								}
-								break;
-						}
-					}
-					catch (Exception e)
-					{
-						MessageBox.Show("Error in script on line " + e.Message);
-					}
-					token = lexical.GetNextToken();
-					if (token.Type == Type.NewLine) break;
-					if (token.Type == Type.Eof) break;
-					if (token.Type == Type.LexError)
-					{
-						//TODO implement lex error recovery
-					}
-				}
-
-				// Determines if the line is a command or text line
-				if (Settings.KeywordList.Contains(lineComponents[0]))
-				{
-					ExecuteScriptLine(lineComponents);
-				}
-				else
-				{ 
-					ExecuteTextLine(lineComponents);
+					MessageBox.Show("Error in script on line " + token.Location.Line + ", column " +
+					                token.Location.Column);
 				}
 			}
+
+			return lineComponents;
 		}
 
 		/*
 		 * Function executes a single line in the current script after it has already been processed into an array of arguments
 		 */
-		private void ExecuteScriptLine(string[] commands)
+		private void ExecuteCommand(string[] command)
 		{
 			// Runs function corresponding to the command with the variables given
-			switch (commands[0])
+			switch (command[0])
 			{
 				case "execute":
 					break;
@@ -172,36 +230,36 @@ namespace VNet
 				case "jump":
 					break;
 				case "character":
-					if (commands[3] != null)
-						_assets.CreateCharacter(commands[1], commands[2], commands[3]);
-					if (commands[2] != null)
-						_assets.CreateCharacter(commands[1], commands[2]);
+					if (command[3] != null)
+						_assets.CreateCharacter(command[1], command[2], command[3]);
+					else if (command[2] != null)
+						_assets.CreateCharacter(command[1], command[2]);
 					else
-						_assets.CreateCharacter(commands[1]);
+						_assets.CreateCharacter(command[1]);
 					break;
 				case "image":
-					if (commands[3] == null)
+					if (command[3] == null)
 					{
-						_assets.CreateBackground(commands[1], commands[2]);
+						_assets.CreateBackground(command[1], command[2]);
 					}
 					else
 					{
-						_assets.AddImageToCharacter(commands[1], commands[2], commands[3]);
+						_assets.AddImageToCharacter(command[1], command[2], command[3]);
 					}
 					break;
 				case "show":
 					// Only parameter is name, therefore show as background
-					if (commands[2] == null)
+					if (command[2] == null)
 					{
-						ShowBackground(commands[1]);
+						ShowBackground(command[1]);
 					}
 					// More parameters, show as character
-					else if (commands[2] != null)
+					else if (command[2] != null)
 					{
-						if (commands[3] != null)
-							ShowCharacter(commands[1], commands[2], commands[3]);
+						if (command[3] != null)
+							ShowCharacter(command[1], command[2], command[3]);
 						else
-							ShowCharacter(commands[1], commands[2]);
+							ShowCharacter(command[1], command[2]);
 					}
 					break;
 				case "play":
@@ -211,24 +269,25 @@ namespace VNet
 			}
 		}
 
-		private void ExecuteTextLine(string[] commands)
+		private void ExecuteTextCommand(string[] commands)
 		{
 			// For protagonist
 			if (commands[0] == "PC")
 			{
 				if (commands[2] == "thought")
 				{
-					ShowTextBox("", commands[1], true);
+					ShowText("", commands[1], true);
 				}
-				ShowTextBox("", commands[1]);
+				else
+				{
+					ShowText("", commands[1]);
+				}
+				return;
 			}
 
 			// For other characters
 			Character selectedCharacter = _assets.characters.Find(i => i.name == commands[0]);
-			if (selectedCharacter != null)
-			{
-				ShowTextBox(selectedCharacter.name, commands[1]);
-			}
+			ShowText(selectedCharacter != null ? selectedCharacter.name : commands[0], commands[1]);
 		}
 
 		private void ShowBackground(string bgName)
@@ -238,12 +297,7 @@ namespace VNet
 			{
 				_environment.CurrentBackground = selectedBackground;
 
-				Image bg = new Image();
-				bg.Source = selectedBackground.image;
-				bg.Name = "bg";
-				ViewportContainer.Children.Add(bg);
-				Panel.SetZIndex(bg, 0);
-				_assets.SetBackgroundToShowing(selectedBackground.name);
+				_backgroundImage.Source = selectedBackground.image;
 			}
 		}
 
@@ -257,54 +311,63 @@ namespace VNet
 				double yOffset;
 				if (position == "left")
 				{
-					_environment.LeftCharacter = selectedCharacter;
+					//_environment.LeftCharacter = selectedCharacter;
 					xOffset = 0;
 					yOffset = 0;
+					_leftCharacter.Source = selectedMood.image;
+					_leftCharacter.Opacity = 1.0;
+					Canvas.SetLeft(_leftCharacter, xOffset);
+					Canvas.SetTop(_leftCharacter, yOffset);
 				}
 				else if (position == "right")
 				{
-					_environment.RightCharacter = selectedCharacter;
-					xOffset = 800;
+					//_environment.RightCharacter = selectedCharacter;
+					xOffset = 760;
 					yOffset = 0;
+					_centerCharacter.Source = selectedMood.image;
+					_centerCharacter.Opacity = 1.0;
+					Canvas.SetLeft(_centerCharacter, xOffset);
+					Canvas.SetTop(_centerCharacter, yOffset);
 				}
 				else
 				{
-					_environment.CenterCharacter = selectedCharacter;
-					xOffset = 420;
+					//_environment.CenterCharacter = selectedCharacter;
+					xOffset = 380;
 					yOffset = 0;
+					_rightCharacter.Source = selectedMood.image;
+					_rightCharacter.Opacity = 1.0;
+					Canvas.SetLeft(_rightCharacter, xOffset);
+					Canvas.SetTop(_rightCharacter, yOffset);
 				}
-
-				Image character = new Image();
-				character.Name = "character";
-				character.Source = selectedMood.image;
-				ViewportContainer.Children.Add(character);
-				Canvas.SetLeft(character, xOffset);
-				Canvas.SetTop(character, yOffset);
-				Panel.SetZIndex(character, 1);
 			}
 		}
 
-		private void ShowTextBox(string characterName, string content, bool thought = false)
+		private void ShowText(string characterName, string content, bool thought = false)
 		{
-			TextBlock text = new TextBlock();
-			text.Text = content;
-			text.Name = "text";
-			text.FontSize = 24;
-			if (!thought)
+			_nameBlock.Text = thought ? "" : characterName;
+			if (thought)
+				_textBlock.Text = content;
+			else
+				_textBlock.Text = "\"" + content + "\"";
+		}
+
+		/*
+		 * Click event on the window, triggers next line when ingame
+		 */
+		private void Game_OnMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+		{
+			string[] command = ProcessScriptLine();
+			if (command == null) return;
+
+			// Determines if the line is a command or text line
+			if (Settings.GameKeywordList.Contains(command[0]) || Settings.SetupKeywordList.Contains(command[0]))
 			{
-				TextBlock name = new TextBlock();
-				name.Text = characterName;
-				name.Name = "name";
-				name.FontSize = 24;
-				ViewportContainer.Children.Add(name);
-				Panel.SetZIndex(name, 2);
-				Canvas.SetLeft(name, 120);
-				Canvas.SetTop(name, 600);
+				ExecuteCommand(command);
 			}
-			ViewportContainer.Children.Add(text);
-			Panel.SetZIndex(text, 2);
-			Canvas.SetLeft(text, 120);
-			Canvas.SetTop(text, 630);
+			else
+			{
+				ExecuteTextCommand(command);
+			}
 		}
 	}
 }

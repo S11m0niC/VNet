@@ -11,11 +11,13 @@ namespace VNet
 		/*
 		 * Read-Only global variables and settings
 		 */
-		public static readonly List<string> KeywordList = new List<string> { "label", "jump", "character", "image", "show", "play", "with", "choice", "execute" };
+		public static readonly List<string> GameKeywordList = new List<string> {"jump", "show", "play", "with", "choice", "execute" };
+		public static readonly List<string> SetupKeywordList = new List<string> {"label", "character", "image"};
 
 		/*
 		 * Settings which change at runtime
 		 */
-
+		public static bool textDisplayedFully;
+		
 	}
 }

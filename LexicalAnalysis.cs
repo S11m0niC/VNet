@@ -56,16 +56,17 @@ namespace VNet
 			_automata[0, 95] = 1;
 			_automata[1, 95] = 1;
 
-			// for punctuation [(, ), ", ., =, \, !, ?]
-			_automata[0, 40] = 3;
-			_automata[0, 41] = 3;
+			// for punctuation [!, ", ', (, ), ,, ., =, ?, \]
+			_automata[0, 33] = 3;
 			_automata[0, 34] = 3;
 			_automata[0, 39] = 3;
+			_automata[0, 40] = 3;
+			_automata[0, 41] = 3;
+			_automata[0, 44] = 3;
 			_automata[0, 46] = 3;
 			_automata[0, 61] = 3;
-			_automata[0, 92] = 3;
-			_automata[0, 33] = 3;
 			_automata[0, 63] = 3;
+			_automata[0, 92] = 3;
 
 			// for comments [//]
 			_automata[0, 47] = 4;
@@ -217,7 +218,7 @@ namespace VNet
 			switch (token.Type)
 			{
 				case Type.Word:
-					if (Settings.KeywordList.Contains(token.Lexem))
+					if (Settings.SetupKeywordList.Contains(token.Lexem) || Settings.GameKeywordList.Contains(token.Lexem))
 					{
 						token.Type = Type.Keyword;
 					}
