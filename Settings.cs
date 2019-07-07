@@ -11,6 +11,10 @@ namespace VNet
 		/*
 		 * Read-Only global variables and settings
 		 */
+		public static readonly string ScriptExtension = "vnets";
+		public static readonly string StartScriptUri = "./game." + ScriptExtension;
+		public static readonly int TextDisplaySpeedInMiliseconds = 20;
+
 		public static readonly List<string> GameKeywordList = new List<string> {"jump", "show", "play", "with", "choice", "execute" };
 		public static readonly List<string> SetupKeywordList = new List<string> {"label", "character", "image"};
 
@@ -18,6 +22,6 @@ namespace VNet
 		 * Settings which change at runtime
 		 */
 		public static bool textDisplayedFully;
-		
+		public static bool executeNext;
 	}
 }

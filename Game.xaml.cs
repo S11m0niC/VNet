@@ -4,15 +4,18 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Timers;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using System.Windows.Threading;
 using VNet.Assets;
 
 namespace VNet
@@ -22,20 +25,20 @@ namespace VNet
 	/// </summary>
 	public partial class Game : Window
 	{
-		private const string _ScriptExtension = "vnets";
-		private const string _StartScriptURI = "./game." + _ScriptExtension;
-
 		private Assets.Assets _assets;
 		private Script _currentScript;
 		private LexicalAnalysis _lexical;
 		private GameEnvironment _environment;
-		
+
 		private TextBlock _textBlock;
 		private TextBlock _nameBlock;
 		private Image _backgroundImage;
 		private Image _leftCharacter;
 		private Image _rightCharacter;
 		private Image _centerCharacter;
+
+		private DoubleAnimation _fade;
+		private DispatcherTimer _textTimer;
 
 	public Game()
 		{
@@ -49,43 +52,85 @@ namespace VNet
 			_environment = new GameEnvironment();
 			_assets = new Assets.Assets();
 
-			_backgroundImage = new Image();
-			_backgroundImage.Name = "backgroundImage";
-			_backgroundImage.Source = _environment.CurrentBackground.image;
+			_backgroundImage = new Image
+			{
+				Name = "backgroundImage",
+				Source = _environment.CurrentBackground.image,
+				Stretch = Stretch.Uniform
+		};
 			ViewportContainer.Children.Add(_backgroundImage);
 			Panel.SetZIndex(_backgroundImage, 0);
 
 			_leftCharacter = new Image
-				{ Name = "leftCharacter", Opacity = 0.0 };
+			{
+				Name = "leftCharacter",
+				Opacity = 0.0,
+				Stretch = Stretch.Uniform
+		};
 			ViewportContainer.Children.Add(_leftCharacter);
 			Panel.SetZIndex(_leftCharacter, 1);
 
 			_centerCharacter = new Image
-				{ Name = "centerCharacter", Opacity = 0.0 };
+			{
+				Name = "centerCharacter",
+				Opacity = 0.0,
+				Stretch = Stretch.Uniform
+		};
 			ViewportContainer.Children.Add(_centerCharacter);
 			Panel.SetZIndex(_centerCharacter, 1);
 
 			_rightCharacter = new Image
-				{ Name = "rightCharacter", Opacity = 0.0 };
+			{
+				Name = "rightCharacter",
+				Opacity = 0.0,
+				Stretch = Stretch.Uniform
+			};
 			ViewportContainer.Children.Add(_rightCharacter);
 			Panel.SetZIndex(_rightCharacter, 1);
 
 			_nameBlock = new TextBlock
-				{ Name = "nameBlock", FontSize = 24, FontWeight = FontWeights.ExtraBold, Foreground = new LinearGradientBrush(Colors.AliceBlue, Colors.Aquamarine, 90.0)};
+			{
+				Name = "nameBlock",
+				FontSize = 24,
+				FontWeight = FontWeights.ExtraBold,
+				Foreground = new LinearGradientBrush(Colors.MediumSlateBlue, Colors.MediumPurple, 45.0),
+			};
 			ViewportContainer.Children.Add(_nameBlock);
-			Canvas.SetLeft(_nameBlock, 240);
-			Canvas.SetTop(_nameBlock, 600);
+			Canvas.SetLeft(_nameBlock, 50);
+			Canvas.SetTop(_nameBlock, 560);
 			Panel.SetZIndex(_nameBlock, 2);
 
 			_textBlock = new TextBlock
-				{ Name = "textBlock", FontSize = 27, FontWeight = FontWeights.Bold, Foreground = new SolidColorBrush(Colors.WhiteSmoke)};
+			{
+				Name = "textBlock",
+				Width = 1180.0,
+				Height = 120.0,
+				FontSize = 21,
+				FontWeight = FontWeights.Bold,
+				Foreground = new SolidColorBrush(Colors.AliceBlue),
+				Background = new SolidColorBrush(Color.FromArgb(128, 0, 0, 0)),
+				TextWrapping = TextWrapping.Wrap
+			};
 			ViewportContainer.Children.Add(_textBlock);
-			Canvas.SetLeft(_textBlock, 240);
-			Canvas.SetTop(_textBlock, 630);
+			Canvas.SetLeft(_textBlock, 50);
+			Canvas.SetTop(_textBlock, 600);
 			Panel.SetZIndex(_textBlock, 2);
 
+			_fade = new DoubleAnimation
+			{
+				From = 0,
+				To = 1,
+				Duration = new Duration(TimeSpan.FromMilliseconds(500))
+			};
+
+			_textTimer = new DispatcherTimer
+			{
+				Interval = TimeSpan.FromMilliseconds(Settings.TextDisplaySpeedInMiliseconds)
+			};
+			_textTimer.Tick += TextTimerOnTick;
+
 			// Execute starting script
-			_currentScript = new Script(_StartScriptURI);
+			_currentScript = new Script(Settings.StartScriptUri);
 			_lexical = new LexicalAnalysis(_currentScript);
 			ProcessScript();
 		}
@@ -111,6 +156,9 @@ namespace VNet
 			}
 		}
 
+		/*
+		 * Function processes next line in current script and returns array of commands and arguments from that line
+		 */
 		private string[] ProcessScriptLine()
 		{
 			Token token = _lexical.GetNextToken();
@@ -134,7 +182,13 @@ namespace VNet
 						// Sets the "command" for this line
 						case Type.Keyword:
 							if (lineComponents[0] != null)
-								throw new Exception(token.Location.Line.ToString());
+							{
+								if (insideQuotes)
+								{
+									quotedString += token.Lexem;
+								}
+								break;
+							}
 							lineComponents[0] = token.Lexem;
 							break;
 						// If word is in quotes adds to string in quotes, otherwise puts the word in first empty spot of command
@@ -224,12 +278,22 @@ namespace VNet
 			switch (command[0])
 			{
 				case "execute":
+					Settings.executeNext = true;
+
 					break;
+
 				case "label":
+					Settings.executeNext = true;
+
 					break;
+
 				case "jump":
+					Settings.executeNext = true;
+
 					break;
+
 				case "character":
+					Settings.executeNext = true;
 					if (command[3] != null)
 						_assets.CreateCharacter(command[1], command[2], command[3]);
 					else if (command[2] != null)
@@ -237,7 +301,9 @@ namespace VNet
 					else
 						_assets.CreateCharacter(command[1]);
 					break;
+
 				case "image":
+					Settings.executeNext = true;
 					if (command[3] == null)
 					{
 						_assets.CreateBackground(command[1], command[2]);
@@ -247,7 +313,9 @@ namespace VNet
 						_assets.AddImageToCharacter(command[1], command[2], command[3]);
 					}
 					break;
+
 				case "show":
+					if (command.Contains("pause")) Settings.executeNext = false;
 					// Only parameter is name, therefore show as background
 					if (command[2] == null)
 					{
@@ -262,42 +330,54 @@ namespace VNet
 							ShowCharacter(command[1], command[2]);
 					}
 					break;
+
 				case "play":
+					
 					break;
+
 				case "choice":
+					Settings.executeNext = false;
+
+					break;
+
+				default:
+					Settings.executeNext = false;
+					ExecuteTextCommand(command);
 					break;
 			}
 		}
 
-		private void ExecuteTextCommand(string[] commands)
+		private void ExecuteTextCommand(string[] command)
 		{
 			// For protagonist
-			if (commands[0] == "PC")
+			if (command[0] == "PC")
 			{
-				if (commands[2] == "thought")
+				if (command[2] == "thought")
 				{
-					ShowText("", commands[1], true);
+					ShowText("", command[1], true);
 				}
 				else
 				{
-					ShowText("", commands[1]);
+					ShowText("", command[1]);
 				}
 				return;
 			}
 
 			// For other characters
-			Character selectedCharacter = _assets.characters.Find(i => i.name == commands[0]);
-			ShowText(selectedCharacter != null ? selectedCharacter.name : commands[0], commands[1]);
+			Character selectedCharacter = _assets.characters.Find(i => i.name == command[0]);
+			ShowText(selectedCharacter != null ? selectedCharacter.name : command[0], command[1]);
 		}
 
 		private void ShowBackground(string bgName)
 		{
+			
 			Background selectedBackground = _assets.backgrounds.Find(i => i.name == bgName);
 			if (selectedBackground != null)
 			{
 				_environment.CurrentBackground = selectedBackground;
 
 				_backgroundImage.Source = selectedBackground.image;
+				_backgroundImage.BeginAnimation(OpacityProperty, _fade);
 			}
 		}
 
@@ -315,7 +395,7 @@ namespace VNet
 					xOffset = 0;
 					yOffset = 0;
 					_leftCharacter.Source = selectedMood.image;
-					_leftCharacter.Opacity = 1.0;
+					_leftCharacter.BeginAnimation(OpacityProperty, _fade);
 					Canvas.SetLeft(_leftCharacter, xOffset);
 					Canvas.SetTop(_leftCharacter, yOffset);
 				}
@@ -325,7 +405,7 @@ namespace VNet
 					xOffset = 760;
 					yOffset = 0;
 					_centerCharacter.Source = selectedMood.image;
-					_centerCharacter.Opacity = 1.0;
+					_centerCharacter.BeginAnimation(OpacityProperty, _fade);
 					Canvas.SetLeft(_centerCharacter, xOffset);
 					Canvas.SetTop(_centerCharacter, yOffset);
 				}
@@ -335,20 +415,49 @@ namespace VNet
 					xOffset = 380;
 					yOffset = 0;
 					_rightCharacter.Source = selectedMood.image;
-					_rightCharacter.Opacity = 1.0;
+					_rightCharacter.BeginAnimation(OpacityProperty, _fade);
 					Canvas.SetLeft(_rightCharacter, xOffset);
 					Canvas.SetTop(_rightCharacter, yOffset);
 				}
 			}
 		}
 
+		/*
+		 * Function saves current line text contents and starts a timer to display the text character by character
+		 */
 		private void ShowText(string characterName, string content, bool thought = false)
 		{
 			_nameBlock.Text = thought ? "" : characterName;
 			if (thought)
-				_textBlock.Text = content;
+				_environment.fullText = content;
 			else
-				_textBlock.Text = "\"" + content + "\"";
+				_environment.fullText = "\"" + content + "\"";
+
+			_environment.displayedText = "";
+			Settings.textDisplayedFully = false;
+			_textTimer.Start();
+		}
+
+		/*
+		 * Function is called on each tick of the text timer, adds one character to the text
+		 */
+		private void TextTimerOnTick(object sender, EventArgs e)
+		{
+			if (_environment.displayedText.Length >= _environment.fullText.Length)
+			{
+				Settings.textDisplayedFully = true;
+				_textTimer.Stop();
+				return;
+			}
+			_environment.displayedText += _environment.fullText[_environment.DisplayedTextLength];
+			_textBlock.Text = _environment.displayedText;
+		}
+
+		private void FinishShowingText()
+		{
+			_environment.displayedText = _environment.fullText;
+			_textBlock.Text = _environment.displayedText;
+			_textTimer.Stop();
 		}
 
 		/*
@@ -356,17 +465,20 @@ namespace VNet
 		 */
 		private void Game_OnMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
 		{
-			string[] command = ProcessScriptLine();
-			if (command == null) return;
-
-			// Determines if the line is a command or text line
-			if (Settings.GameKeywordList.Contains(command[0]) || Settings.SetupKeywordList.Contains(command[0]))
+			// If the textBlock is still being filled
+			if (Settings.textDisplayedFully == false)
 			{
-				ExecuteCommand(command);
+				FinishShowingText();
+				Settings.textDisplayedFully = true;
+				return;
 			}
-			else
+
+			Settings.executeNext = true;
+			while (Settings.executeNext)
 			{
-				ExecuteTextCommand(command);
+				string[] command = ProcessScriptLine();
+				if (command == null) return;
+				ExecuteCommand(command);
 			}
 		}
 	}

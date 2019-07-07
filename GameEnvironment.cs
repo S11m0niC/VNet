@@ -17,7 +17,12 @@ namespace VNet
 	{
 		private readonly Background _defaultBackground;
 		private Background _currentBackground;
-		private string _displayedText;
+
+		public string fullText;
+		public string displayedText;
+
+		public int FullTextLength => fullText.Length;
+		public int DisplayedTextLength => displayedText.Length;
 
 		public Background CurrentBackground
 		{
@@ -28,19 +33,12 @@ namespace VNet
 		public Character CenterCharacter { get; set; }
 		public Character RightCharacter { get; set; }
 
-		public string DisplayedText
-		{
-			get => _displayedText ?? "";
-			set => _displayedText = value;
-		}
-
 		public GameEnvironment()
 		{
 			_currentBackground = null;
 			LeftCharacter = null;
 			CenterCharacter = null;
 			RightCharacter = null;
-			_displayedText = null;
 
 			WriteableBitmap black = BitmapFactory.New(1280, 720);
 			black.Clear(Colors.Black);
