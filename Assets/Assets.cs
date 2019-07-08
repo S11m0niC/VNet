@@ -43,6 +43,12 @@ namespace VNet.Assets
 
 		public void CreateLabel(string name, string line)
 		{
+			Label lab = labels.Find(i => i.name == name);
+			if (lab != null)
+			{
+				lab.lineNumber = Int32.Parse(line);
+				return;
+			} 
 			int lineNum = Int32.Parse(line);
 			var label = new Label(name, lineNum);
 			labels.Add(label);

@@ -17,6 +17,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 using VNet.Assets;
+using Label = System.Windows.Controls.Label;
 
 namespace VNet
 {
@@ -184,12 +185,12 @@ namespace VNet
 							if (lineComponents[0] != null)
 							{
 								if (insideQuotes)
-								{
 									quotedString += token.Lexem;
-								}
 								break;
 							}
 							lineComponents[0] = token.Lexem;
+							if (token.Lexem == "label")
+								lineComponents[1] = (token.Location.Line + 1).ToString();
 							break;
 						// If word is in quotes adds to string in quotes, otherwise puts the word in first empty spot of command
 						case Type.Word:
@@ -284,12 +285,12 @@ namespace VNet
 
 				case "label":
 					Settings.executeNext = true;
-
+					_assets.CreateLabel(command[2], command[1]);
 					break;
 
 				case "jump":
 					Settings.executeNext = true;
-
+					_currentScript.currentLine = _assets.labels.Find(i => i.name == command[1]).lineNumber;
 					break;
 
 				case "character":
