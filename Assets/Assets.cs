@@ -14,6 +14,7 @@ namespace VNet.Assets
 		public List<Background> backgrounds;
 		public List<Character> characters;
 		public List<Sound> sounds;
+		public List<Choice> choices;
 
 		public Assets()
 		{
@@ -21,6 +22,7 @@ namespace VNet.Assets
 			backgrounds = new List<Background>();
 			characters = new List<Character>();
 			sounds = new List<Sound>();
+			choices = new List<Choice>();
 		}
 
 		public void CreateCharacter(string name, string moodName, string imagePath)
@@ -54,6 +56,15 @@ namespace VNet.Assets
 			labels.Add(label);
 		}
 
+		public void CreateChoice(string name)
+		{
+			Choice ch = new Choice(name);
+			if (choices.Find(i => i.name == name) == null)
+			{
+				choices.Add(ch);
+			}
+		}
+
 		public void CreateBackground(string name, string imagePath)
 		{
 			var image = new BitmapImage(new Uri(ConvertToAbsolutePath(imagePath), UriKind.Absolute));
@@ -65,6 +76,12 @@ namespace VNet.Assets
 		{
 			var selectedCharacter = characters.Find(i => i.name == charName);
 			selectedCharacter?.AddMoodImage(moodName, ConvertToAbsolutePath(imagePath));
+		}
+
+		public void AddOptionToChoice(string name, string option)
+		{
+			var selectedChoice = choices.Find(i => i.name == name);
+			selectedChoice?.AddOption(option);
 		}
 
 		public void SetBackgroundToShowing(string name)

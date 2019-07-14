@@ -338,7 +338,22 @@ namespace VNet
 
 				case "choice":
 					Settings.executeNext = false;
-
+					if (command[1] != null)
+					{
+						_assets.CreateChoice(command[1]);
+						if (command[2] != null)
+						{
+							_assets.AddOptionToChoice(command[1], command[2]);
+						}
+						if (command[3] != null)
+						{
+							_assets.AddOptionToChoice(command[1], command[2]);
+						}
+						if (command[4] != null)
+						{
+							_assets.AddOptionToChoice(command[1], command[2]);
+						}
+					}
 					break;
 
 				default:
