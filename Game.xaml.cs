@@ -31,6 +31,7 @@ namespace VNet
 		private LexicalAnalysis _lexical;
 		private GameEnvironment _environment;
 
+		// Game area elements
 		private TextBlock _textBlock;
 		private TextBlock _nameBlock;
 		private Image _backgroundImage;
@@ -38,7 +39,8 @@ namespace VNet
 		private Image _rightCharacter;
 		private Image _centerCharacter;
 
-		private DoubleAnimation _fade;
+		private DoubleAnimation _fadeIn;
+		private DoubleAnimation _fadeOut;
 		private DispatcherTimer _textTimer;
 
 	public Game()
@@ -117,10 +119,16 @@ namespace VNet
 			Canvas.SetTop(_textBlock, 600);
 			Panel.SetZIndex(_textBlock, 2);
 
-			_fade = new DoubleAnimation
+			_fadeIn = new DoubleAnimation
 			{
 				From = 0,
 				To = 1,
+				Duration = new Duration(TimeSpan.FromMilliseconds(500))
+			};
+			_fadeOut = new DoubleAnimation
+			{
+				From = 1,
+				To = 0,
 				Duration = new Duration(TimeSpan.FromMilliseconds(500))
 			};
 
@@ -130,29 +138,29 @@ namespace VNet
 			};
 			_textTimer.Tick += TextTimerOnTick;
 
-			// Execute starting script
+			// Process starting script and ready the gameplay for first input of user
 			_currentScript = new Script(Settings.StartScriptUri);
 			_lexical = new LexicalAnalysis(_currentScript);
-			ProcessScript();
+			_currentScript.currentLine = ProcessScript();
 		}
 
 		/*
-		 * Function executes script from start to first displayable line (text, image...)
+		 * Function processes script from start to finish, executing setup commands (creating characters, backgrounds, labels..)
 		 */
-		private void ProcessScript()
+		private int ProcessScript()
 		{
+			int startOfGameLine = 0;
 			while(true)
 			{
 				string[] command = ProcessScriptLine();
-				if (command == null) return;
+				if (command == null) return startOfGameLine;
 				if (Settings.SetupKeywordList.Contains(command[0]))
 				{
 					ExecuteCommand(command);
 				}
-				else
+				else if (startOfGameLine == 0)
 				{
-					_currentScript.currentLine--;
-					return;
+					startOfGameLine = _currentScript.currentLine - 1;
 				}
 			}
 		}
@@ -172,7 +180,7 @@ namespace VNet
 			bool insideQuotes = false;
 			string quotedString = "";
 
-			string[] lineComponents = new string[5];
+			string[] lineComponents = new string[7];
 
 			while (true)
 			{
@@ -208,6 +216,10 @@ namespace VNet
 								lineComponents[3] = token.Lexem;
 							else if (lineComponents[4] == null)
 								lineComponents[4] = token.Lexem;
+							else if (lineComponents[5] == null)
+								lineComponents[5] = token.Lexem;
+							else if (lineComponents[6] == null)
+								lineComponents[6] = token.Lexem;
 							break;
 
 						// If number is in quotes adds to string in quotes
@@ -233,6 +245,10 @@ namespace VNet
 									lineComponents[3] = quotedString;
 								else if (lineComponents[4] == null)
 									lineComponents[4] = quotedString;
+								else if (lineComponents[5] == null)
+									lineComponents[5] = quotedString;
+								else if (lineComponents[6] == null)
+									lineComponents[6] = quotedString;
 								quotedString = "";
 							}
 							break;
@@ -289,8 +305,7 @@ namespace VNet
 					break;
 
 				case "jump":
-					Settings.executeNext = true;
-					_currentScript.currentLine = _assets.labels.Find(i => i.name == command[1]).lineNumber;
+					JumpToLabel(command[1]);
 					break;
 
 				case "character":
@@ -332,26 +347,41 @@ namespace VNet
 					}
 					break;
 
+				case "clear":
+					if (command[1] != null)
+					{
+						ClearCharacters(command[1]);
+					}
+					else
+					{
+						ClearCharacters();
+					}
+					break;
+
 				case "play":
 					
 					break;
 
 				case "choice":
-					Settings.executeNext = false;
-					if (command[1] != null)
+					if (command[1] == "create")
 					{
-						_assets.CreateChoice(command[1]);
-						if (command[2] != null)
+						_assets.CreateChoice(command[2]);
+					}
+					else if (command[1] == "display")
+					{
+						Settings.executeNext = false;
+						ShowChoice(command[2]);
+					}
+					else
+					{
+						string choiceName = command[1];
+						if (command[2] == "set" && command[3] == "text")
 						{
-							_assets.AddOptionToChoice(command[1], command[2]);
+							_assets.EditChoiceText(choiceName, command[4]);
 						}
-						if (command[3] != null)
+						else if (command[2] == "add")
 						{
-							_assets.AddOptionToChoice(command[1], command[2]);
-						}
-						if (command[4] != null)
-						{
-							_assets.AddOptionToChoice(command[1], command[2]);
+							_assets.AddOptionToChoice(choiceName, command[3], command[4]);
 						}
 					}
 					break;
@@ -363,6 +393,9 @@ namespace VNet
 			}
 		}
 
+		/*
+		 * Function executes a single line in the current script if it is a text line
+		 */
 		private void ExecuteTextCommand(string[] command)
 		{
 			// For protagonist
@@ -384,6 +417,9 @@ namespace VNet
 			ShowText(selectedCharacter != null ? selectedCharacter.name : command[0], command[1]);
 		}
 
+		/*
+		 * Function changes the currently showing background to the one with the given name
+		 */
 		private void ShowBackground(string bgName)
 		{
 			
@@ -393,10 +429,13 @@ namespace VNet
 				_environment.CurrentBackground = selectedBackground;
 
 				_backgroundImage.Source = selectedBackground.image;
-				_backgroundImage.BeginAnimation(OpacityProperty, _fade);
+				_backgroundImage.BeginAnimation(OpacityProperty, _fadeIn);
 			}
 		}
 
+		/*
+		 * Function shows a given character with the given sprite (mood) in the given position
+		 */
 		private void ShowCharacter(string chName, string moodName, string position = "")
 		{
 			Character selectedCharacter = _assets.characters.Find(i => i.name == chName);
@@ -407,33 +446,80 @@ namespace VNet
 				double yOffset;
 				if (position == "left")
 				{
-					//_environment.LeftCharacter = selectedCharacter;
+					_environment.LeftCharacter = selectedCharacter;
 					xOffset = 0;
 					yOffset = 0;
 					_leftCharacter.Source = selectedMood.image;
-					_leftCharacter.BeginAnimation(OpacityProperty, _fade);
+					_leftCharacter.BeginAnimation(OpacityProperty, _fadeIn);
 					Canvas.SetLeft(_leftCharacter, xOffset);
 					Canvas.SetTop(_leftCharacter, yOffset);
 				}
 				else if (position == "right")
 				{
-					//_environment.RightCharacter = selectedCharacter;
+					_environment.RightCharacter = selectedCharacter;
 					xOffset = 760;
 					yOffset = 0;
 					_centerCharacter.Source = selectedMood.image;
-					_centerCharacter.BeginAnimation(OpacityProperty, _fade);
+					_centerCharacter.BeginAnimation(OpacityProperty, _fadeIn);
 					Canvas.SetLeft(_centerCharacter, xOffset);
 					Canvas.SetTop(_centerCharacter, yOffset);
 				}
 				else
 				{
-					//_environment.CenterCharacter = selectedCharacter;
+					_environment.CenterCharacter = selectedCharacter;
 					xOffset = 380;
 					yOffset = 0;
 					_rightCharacter.Source = selectedMood.image;
-					_rightCharacter.BeginAnimation(OpacityProperty, _fade);
+					_rightCharacter.BeginAnimation(OpacityProperty, _fadeIn);
 					Canvas.SetLeft(_rightCharacter, xOffset);
 					Canvas.SetTop(_rightCharacter, yOffset);
+				}
+			}
+		}
+
+		/*
+		 * Function clears the image of character specified in argument; if no character is specified clears all characters
+		 */
+		private void ClearCharacters(string position = "")
+		{
+			if (position == "left" && _environment.LeftCharacter != null)
+			{
+				_leftCharacter.BeginAnimation(OpacityProperty, _fadeOut);
+				_leftCharacter.Source = null;
+				_environment.LeftCharacter = null;
+
+			}
+			else if (position == "center" && _environment.CenterCharacter != null)
+			{
+				_centerCharacter.BeginAnimation(OpacityProperty, _fadeOut);
+				_centerCharacter.Source = null;
+				_environment.CenterCharacter = null;
+			}
+			else if (position == "right" && _environment.RightCharacter != null)
+			{
+				_rightCharacter.BeginAnimation(OpacityProperty, _fadeOut);
+				_rightCharacter.Source = null;
+				_environment.RightCharacter = null;
+			}
+			else
+			{
+				if (_environment.LeftCharacter != null)
+				{
+					_leftCharacter.BeginAnimation(OpacityProperty, _fadeOut);
+					_leftCharacter.Source = null;
+					_environment.LeftCharacter = null;
+				}
+				if (_environment.CenterCharacter != null)
+				{
+					_centerCharacter.BeginAnimation(OpacityProperty, _fadeOut);
+					_centerCharacter.Source = null;
+					_environment.CenterCharacter = null;
+				}
+				if (_environment.RightCharacter != null)
+				{
+					_rightCharacter.BeginAnimation(OpacityProperty, _fadeOut);
+					_rightCharacter.Source = null;
+					_environment.RightCharacter = null;
 				}
 			}
 		}
@@ -469,6 +555,9 @@ namespace VNet
 			_textBlock.Text = _environment.displayedText;
 		}
 
+		/*
+		 * Shows entire line of text at once, interrupting the "typing out" animation.
+		 */
 		private void FinishShowingText()
 		{
 			_environment.displayedText = _environment.fullText;
@@ -476,19 +565,69 @@ namespace VNet
 			_textTimer.Stop();
 		}
 
-		/*
-		 * Click event on the window, triggers next line when ingame
-		 */
-		private void Game_OnMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+		private void ShowChoice(string choiceName)
 		{
-			// If the textBlock is still being filled
-			if (Settings.textDisplayedFully == false)
-			{
-				FinishShowingText();
-				Settings.textDisplayedFully = true;
-				return;
-			}
+			Settings.inChoice = true;
+			int textTop = 100;
+			Choice ch = _assets.choices.Find(i => i.name == choiceName);
+			_textBlock.Text = ch.text;
 
+			foreach (Option opt in ch.options)
+			{
+				textTop += 50;
+				Button button = new Button
+				{
+					Name = opt.destinationLabel,
+					Width = 480,
+					Height = 32,
+					Background = new SolidColorBrush(Color.FromArgb(128, 32, 32, 32))
+				};
+				TextBlock optionTextBlock = new TextBlock
+				{
+					Name = "optionTextBlock",
+					Text = opt.text,
+					FontSize = 16,
+					Foreground = new SolidColorBrush(Colors.White)
+				};
+				button.Content = optionTextBlock;
+				button.AddHandler(Button.ClickEvent, new RoutedEventHandler(ChoiceButtonClick));
+				ViewportContainer.Children.Add(button);
+				Canvas.SetLeft(button, Settings.windowWidth / 2 - button.Width / 2);
+				Canvas.SetTop(button, textTop);
+				Panel.SetZIndex(button, 3);
+				_environment.onscreenButtonNames.Add(button.Name);
+			}
+		}
+
+		private void ChoiceButtonClick(object sender, RoutedEventArgs e)
+		{
+			JumpToLabel(((Button)sender).Name);
+			Settings.inChoice = false;
+			TextBlock block = (TextBlock)LogicalTreeHelper.FindLogicalNode(ViewportContainer, "choiceTextBlock");
+			ViewportContainer.Children.Remove(block);
+			while (_environment.onscreenButtonNames.Count > 0)
+			{
+				Button btn = (Button)LogicalTreeHelper.FindLogicalNode(ViewportContainer, _environment.onscreenButtonNames[0]);
+				ViewportContainer.Children.Remove(btn);
+				_environment.onscreenButtonNames.RemoveAt(0);
+			}
+			TriggerNextCommand();
+		}
+
+		/*
+		 * Function sets the current line in script to location of given label
+		 */
+		private void JumpToLabel(string labelName)
+		{
+			Settings.executeNext = true;
+			_currentScript.currentLine = _assets.labels.Find(i => i.name == labelName).lineNumber;
+		}
+
+		/*
+		 * Executes next line of script. Can execute multiple lines if they are non-stopping
+		 */
+		private void TriggerNextCommand()
+		{
 			Settings.executeNext = true;
 			while (Settings.executeNext)
 			{
@@ -496,6 +635,26 @@ namespace VNet
 				if (command == null) return;
 				ExecuteCommand(command);
 			}
+		}
+
+		/*
+		 * Click event on the window, triggers next line when ingame
+		 */
+		private void Game_OnMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+		{
+			if (Settings.inChoice)
+			{
+				return;
+			}
+			// If the textBlock is still being filled
+			if (Settings.textDisplayedFully == false)
+			{
+				FinishShowingText();
+				Settings.textDisplayedFully = true;
+				return;
+			}
+			// If text is displayed completely
+			TriggerNextCommand();
 		}
 	}
 }

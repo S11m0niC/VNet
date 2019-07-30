@@ -18,6 +18,8 @@ namespace VNet
 		public int currentLine;
 		public int currentPositionInLine;
 
+		public Script() { }
+
 		public Script(string srcPath)
 		{
 			sourcePath = srcPath;

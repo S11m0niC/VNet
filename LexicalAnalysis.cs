@@ -62,6 +62,7 @@ namespace VNet
 			_automata[0, 39] = 3;
 			_automata[0, 40] = 3;
 			_automata[0, 41] = 3;
+			_automata[0, 42] = 3;
 			_automata[0, 44] = 3;
 			_automata[0, 46] = 3;
 			_automata[0, 61] = 3;

@@ -12,7 +12,6 @@ namespace VNet.Assets
 	{
 		public string name;
 		public WriteableBitmap image;
-		public bool onScreen = false;
 
 		public Background(string name, WriteableBitmap image)
 		{

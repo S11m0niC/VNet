@@ -33,12 +33,14 @@ namespace VNet
 		public Character CenterCharacter { get; set; }
 		public Character RightCharacter { get; set; }
 
+		public List<string> onscreenButtonNames;
 		public GameEnvironment()
 		{
 			_currentBackground = null;
 			LeftCharacter = null;
 			CenterCharacter = null;
 			RightCharacter = null;
+			onscreenButtonNames = new List<string>();
 
 			WriteableBitmap black = BitmapFactory.New(1280, 720);
 			black.Clear(Colors.Black);

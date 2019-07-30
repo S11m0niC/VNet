@@ -45,15 +45,18 @@ namespace VNet.Assets
 
 		public void CreateLabel(string name, string line)
 		{
-			Label lab = labels.Find(i => i.name == name);
-			if (lab != null)
+			if (int.TryParse(line, out int ln))
 			{
-				lab.lineNumber = Int32.Parse(line);
-				return;
-			} 
-			int lineNum = Int32.Parse(line);
-			var label = new Label(name, lineNum);
-			labels.Add(label);
+				Label lab = labels.Find(i => i.name == name);
+				if (lab != null)
+				{
+					lab.lineNumber = ln;
+					return;
+				}
+				int lineNum = ln;
+				var label = new Label(name, lineNum);
+				labels.Add(label);
+			}
 		}
 
 		public void CreateChoice(string name)
@@ -63,6 +66,18 @@ namespace VNet.Assets
 			{
 				choices.Add(ch);
 			}
+		}
+
+		public void EditChoiceText(string name, string text)
+		{
+			Choice ch = choices.Find(i => i.name == name);
+			ch.text = text;
+		}
+
+		public void AddOptionToChoice(string name, string optionText, string optionLabel)
+		{
+			Choice ch = choices.Find(i => i.name == name);
+			ch.options.Add(new Option(optionText, optionLabel));
 		}
 
 		public void CreateBackground(string name, string imagePath)
@@ -76,23 +91,6 @@ namespace VNet.Assets
 		{
 			var selectedCharacter = characters.Find(i => i.name == charName);
 			selectedCharacter?.AddMoodImage(moodName, ConvertToAbsolutePath(imagePath));
-		}
-
-		public void AddOptionToChoice(string name, string option)
-		{
-			var selectedChoice = choices.Find(i => i.name == name);
-			selectedChoice?.AddOption(option);
-		}
-
-		public void SetBackgroundToShowing(string name)
-		{
-			foreach (var bg in this.backgrounds)
-			{
-				if (bg.name == name)
-					bg.onScreen = true;
-				else
-					bg.onScreen = false;
-			}
 		}
 
 		public string ConvertToAbsolutePath(string relativePath)
