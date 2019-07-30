@@ -96,7 +96,6 @@ namespace VNet
 				Name = "nameBlock",
 				FontSize = 24,
 				FontWeight = FontWeights.ExtraBold,
-				Foreground = new LinearGradientBrush(Colors.MediumSlateBlue, Colors.MediumPurple, 45.0),
 			};
 			ViewportContainer.Children.Add(_nameBlock);
 			Canvas.SetLeft(_nameBlock, 50);
@@ -222,12 +221,26 @@ namespace VNet
 								lineComponents[6] = token.Lexem;
 							break;
 
-						// If number is in quotes adds to string in quotes
+						// If number is in quotes adds to string in quotes, otherwise puts the number in first empty spot of command
 						case Type.Number:
 							if (insideQuotes)
 							{
 								quotedString += token.Lexem;
 							}
+							else if (lineComponents[0] == null)
+								lineComponents[0] = token.Lexem;
+							else if (lineComponents[1] == null)
+								lineComponents[1] = token.Lexem;
+							else if (lineComponents[2] == null)
+								lineComponents[2] = token.Lexem;
+							else if (lineComponents[3] == null)
+								lineComponents[3] = token.Lexem;
+							else if (lineComponents[4] == null)
+								lineComponents[4] = token.Lexem;
+							else if (lineComponents[5] == null)
+								lineComponents[5] = token.Lexem;
+							else if (lineComponents[6] == null)
+								lineComponents[6] = token.Lexem;
 							break;
 
 						// If it is an opening quote starts adding following elements to quoted string, otherwise closes quote and adds whole string to first available variable slot
@@ -316,6 +329,10 @@ namespace VNet
 						_assets.CreateCharacter(command[1], command[2]);
 					else
 						_assets.CreateCharacter(command[1]);
+					break;
+
+				case "color":
+					_assets.SetCharacterColor(command[1], command[2], command[3], command[4]);
 					break;
 
 				case "image":
@@ -529,6 +546,19 @@ namespace VNet
 		 */
 		private void ShowText(string characterName, string content, bool thought = false)
 		{
+			Character selChar = _assets.characters.Find(i => i.name == characterName);
+			if (selChar != null)
+			{
+				_nameBlock.Foreground = new SolidColorBrush(selChar.color);
+			}
+			else
+			{
+				_nameBlock.Foreground = new LinearGradientBrush(
+					Color.FromRgb(32, 32, 32),
+					Color.FromRgb(64, 64, 64),
+					45.0);
+			}
+			
 			_nameBlock.Text = thought ? "" : characterName;
 			if (thought)
 				_environment.fullText = content;

@@ -16,7 +16,7 @@ namespace VNet
 		public static readonly int TextDisplaySpeedInMiliseconds = 20;
 
 		public static readonly List<string> GameKeywordList = new List<string> {"jump", "show", "clear", "play", "with", "choice", "execute" };
-		public static readonly List<string> SetupKeywordList = new List<string> {"label", "character", "image"};
+		public static readonly List<string> SetupKeywordList = new List<string> {"label", "character", "image", "color"};
 
 		/*
 		 * Settings which change at runtime

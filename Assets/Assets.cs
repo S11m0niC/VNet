@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
 namespace VNet.Assets
@@ -91,6 +92,21 @@ namespace VNet.Assets
 		{
 			var selectedCharacter = characters.Find(i => i.name == charName);
 			selectedCharacter?.AddMoodImage(moodName, ConvertToAbsolutePath(imagePath));
+		}
+
+		public void SetCharacterColor(string charName, string r, string g, string b)
+		{
+			var selectedCharacter = characters.Find(i => i.name == charName);
+			if (selectedCharacter != null)
+			{
+				int.TryParse(r, out int red);
+				int.TryParse(g, out int green);
+				int.TryParse(b, out int blue);
+				byte redByte = (byte)red;
+				byte greenByte = (byte)green;
+				byte blueByte = (byte)blue;
+				selectedCharacter.color = Color.FromRgb(redByte, greenByte, blueByte);
+			}
 		}
 
 		public string ConvertToAbsolutePath(string relativePath)

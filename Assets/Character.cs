@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Controls;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
 namespace VNet.Assets
@@ -11,6 +12,7 @@ namespace VNet.Assets
 	public class Character
 	{
 		public string name;
+		public Color color;
 		public List<Mood> moods;
 
 		public Character(string name)
