@@ -418,11 +418,11 @@ namespace VNet
 					switch (var)
 					{
 						case Assets.Boolean boolVal:
-							if (bool.TryParse(command[2], out boolValue))
+							if (bool.TryParse(command[3], out boolValue))
 							{
 								if (boolValue == boolVal.value)
 								{
-									JumpToLabel(command[3]);
+									JumpToLabel(command[4]);
 								}
 							}
 							break;
