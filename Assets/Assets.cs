@@ -15,7 +15,9 @@ namespace VNet.Assets
 		public List<Background> backgrounds;
 		public List<Character> characters;
 		public List<Sound> sounds;
+		public List<Sound> music;
 		public List<Choice> choices;
+		public List<Variable> variables;
 
 		public Assets()
 		{
@@ -23,7 +25,9 @@ namespace VNet.Assets
 			backgrounds = new List<Background>();
 			characters = new List<Character>();
 			sounds = new List<Sound>();
+			music = new List<Sound>();
 			choices = new List<Choice>();
+			variables = new List<Variable>();
 		}
 
 		public void CreateCharacter(string name, string moodName, string imagePath)
@@ -42,6 +46,27 @@ namespace VNet.Assets
 		{
 			var character = new Character(name);
 			characters.Add(character);
+		}
+
+		public void AddImageToCharacter(string charName, string moodName, string imagePath)
+		{
+			var selectedCharacter = characters.Find(i => i.name == charName);
+			selectedCharacter?.AddMoodImage(moodName, ConvertToAbsolutePath(imagePath));
+		}
+
+		public void SetCharacterColor(string charName, string r, string g, string b)
+		{
+			var selectedCharacter = characters.Find(i => i.name == charName);
+			if (selectedCharacter != null)
+			{
+				int.TryParse(r, out int red);
+				int.TryParse(g, out int green);
+				int.TryParse(b, out int blue);
+				byte redByte = (byte)red;
+				byte greenByte = (byte)green;
+				byte blueByte = (byte)blue;
+				selectedCharacter.color = Color.FromRgb(redByte, greenByte, blueByte);
+			}
 		}
 
 		public void CreateLabel(string name, string line)
@@ -88,30 +113,72 @@ namespace VNet.Assets
 			backgrounds.Add(background);
 		}
 
-		public void AddImageToCharacter(string charName, string moodName, string imagePath)
+		public void CreateSound(string name, string path)
 		{
-			var selectedCharacter = characters.Find(i => i.name == charName);
-			selectedCharacter?.AddMoodImage(moodName, ConvertToAbsolutePath(imagePath));
+			Sound snd = new Sound(name, ConvertToAbsolutePath(path));
+			sounds.Add(snd);
 		}
 
-		public void SetCharacterColor(string charName, string r, string g, string b)
+		public void CreateSong(string name, string path)
 		{
-			var selectedCharacter = characters.Find(i => i.name == charName);
-			if (selectedCharacter != null)
-			{
-				int.TryParse(r, out int red);
-				int.TryParse(g, out int green);
-				int.TryParse(b, out int blue);
-				byte redByte = (byte)red;
-				byte greenByte = (byte)green;
-				byte blueByte = (byte)blue;
-				selectedCharacter.color = Color.FromRgb(redByte, greenByte, blueByte);
-			}
+			Sound snd = new Sound(name, ConvertToAbsolutePath(path));
+			music.Add(snd);
+		}
+
+		public void CreateVariable(string name, int value)
+		{
+			variables.Add(new Integer(name, value));
+		}
+
+		public void CreateVariable(string name, bool value)
+		{
+			variables.Add(new Boolean(name, value));
 		}
 
 		public string ConvertToAbsolutePath(string relativePath)
 		{
 			return System.IO.Path.GetFullPath(relativePath);
 		}
+
+		public void IntegerAdd(string name, int value)
+		{
+			Variable var = variables.Find(i => i.name == name);
+			if (var is Integer integer)
+			{
+				integer.value += value;
+			}
+		}
+
+		public void IntegerSubtract(string name, int value)
+		{
+			Variable var = variables.Find(i => i.name == name);
+			if (var is Integer integer)
+			{
+				integer.value -= value;
+			}
+		}
+
+		public void IntegerSet(string name, int value)
+		{
+			Variable var = variables.Find(i => i.name == name);
+			if (var is Integer integer)
+			{
+				integer.value = value;
+			}
+		}
+
+		public void BooleanSet(string name, bool value)
+		{
+			Variable var = variables.Find(i => i.name == name);
+			if (var is Boolean boolean)
+			{
+				boolean.value = value;
+			}
+		}
+	}
+
+	public abstract class Asset
+	{
+		public string name;
 	}
 }

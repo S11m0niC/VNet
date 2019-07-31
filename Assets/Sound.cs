@@ -6,12 +6,14 @@ using System.Threading.Tasks;
 
 namespace VNet.Assets
 {
-	public class Sound
+	public class Sound : Asset
 	{
-		public string name;
-		public Sound(string name)
+		public string location;
+
+		public Sound(string name, string location)
 		{
 			this.name = name;
+			this.location = location;
 		}
 	}
 }

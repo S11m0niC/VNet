@@ -56,7 +56,7 @@ namespace VNet
 			_automata[0, 95] = 1;
 			_automata[1, 95] = 1;
 
-			// for punctuation [!, ", ', (, ), ,, ., =, ?, \]
+			// for punctuation [!, ", ', (, ), ,, ., =, <, >, ?, \]
 			_automata[0, 33] = 3;
 			_automata[0, 34] = 3;
 			_automata[0, 39] = 3;
@@ -65,9 +65,14 @@ namespace VNet
 			_automata[0, 42] = 3;
 			_automata[0, 44] = 3;
 			_automata[0, 46] = 3;
+			_automata[0, 60] = 3;
 			_automata[0, 61] = 3;
+			_automata[0, 62] = 3;
 			_automata[0, 63] = 3;
 			_automata[0, 92] = 3;
+
+			// for decimal character in numbers [.]
+			_automata[2, 46] = 2;
 
 			// for comments [//]
 			_automata[0, 47] = 4;

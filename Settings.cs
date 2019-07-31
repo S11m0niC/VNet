@@ -15,8 +15,8 @@ namespace VNet
 		public static readonly string StartScriptUri = "./game." + ScriptExtension;
 		public static readonly int TextDisplaySpeedInMiliseconds = 20;
 
-		public static readonly List<string> GameKeywordList = new List<string> {"jump", "show", "clear", "play", "with", "choice", "execute" };
-		public static readonly List<string> SetupKeywordList = new List<string> {"label", "character", "image", "color"};
+		public static readonly List<string> GameKeywordList = new List<string> {"jump", "show", "clear", "play", "stop", "with", "execute", "int", "bool", "if", "add", "subtract", "set" };
+		public static readonly List<string> SetupKeywordList = new List<string> {"label", "character", "image", "color", "sound", "music", "choice"};
 
 		/*
 		 * Settings which change at runtime
@@ -25,6 +25,7 @@ namespace VNet
 		public static int windowHeight = 720;
 		public static bool textDisplayedFully;
 		public static bool executeNext;
+		public static bool inGame;
 		public static bool inChoice;
 	}
 }

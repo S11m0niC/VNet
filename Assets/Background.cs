@@ -8,9 +8,8 @@ using System.Windows.Media.Imaging;
 
 namespace VNet.Assets
 {
-	public class Background
+	public class Background : Asset
 	{
-		public string name;
 		public WriteableBitmap image;
 
 		public Background(string name, WriteableBitmap image)

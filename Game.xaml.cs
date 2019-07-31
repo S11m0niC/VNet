@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -17,6 +18,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 using VNet.Assets;
+using Boolean = System.Boolean;
 using Label = System.Windows.Controls.Label;
 
 namespace VNet
@@ -42,6 +44,9 @@ namespace VNet
 		private DoubleAnimation _fadeIn;
 		private DoubleAnimation _fadeOut;
 		private DispatcherTimer _textTimer;
+
+		private MediaPlayer _backgroundMusicPlayer;
+		private MediaPlayer _soundEffectPlayer;
 
 	public Game()
 		{
@@ -137,10 +142,19 @@ namespace VNet
 			};
 			_textTimer.Tick += TextTimerOnTick;
 
+			_backgroundMusicPlayer = new MediaPlayer();
+			_soundEffectPlayer = new MediaPlayer();
+
+			// Show startup image
+
+
 			// Process starting script and ready the gameplay for first input of user
 			_currentScript = new Script(Settings.StartScriptUri);
 			_lexical = new LexicalAnalysis(_currentScript);
 			_currentScript.currentLine = ProcessScript();
+
+			// Show main menu
+			Settings.inGame = true;
 		}
 
 		/*
@@ -192,7 +206,23 @@ namespace VNet
 							if (lineComponents[0] != null)
 							{
 								if (insideQuotes)
+								{
 									quotedString += token.Lexem;
+								}
+								else if (lineComponents[0] == null)
+									lineComponents[0] = token.Lexem;
+								else if (lineComponents[1] == null)
+									lineComponents[1] = token.Lexem;
+								else if (lineComponents[2] == null)
+									lineComponents[2] = token.Lexem;
+								else if (lineComponents[3] == null)
+									lineComponents[3] = token.Lexem;
+								else if (lineComponents[4] == null)
+									lineComponents[4] = token.Lexem;
+								else if (lineComponents[5] == null)
+									lineComponents[5] = token.Lexem;
+								else if (lineComponents[6] == null)
+									lineComponents[6] = token.Lexem;
 								break;
 							}
 							lineComponents[0] = token.Lexem;
@@ -266,12 +296,26 @@ namespace VNet
 							}
 							break;
 
-						// If punctuation is in quotes adds the character to string in quotes
+						// If punctuation is in quotes adds the character to string in quotes, otherwise puts it into first available spot of command
 						case Type.Punctuation:
 							if (insideQuotes)
 							{
 								quotedString += token.Lexem;
 							}
+							else if (lineComponents[0] == null)
+								lineComponents[0] = token.Lexem;
+							else if (lineComponents[1] == null)
+								lineComponents[1] = token.Lexem;
+							else if (lineComponents[2] == null)
+								lineComponents[2] = token.Lexem;
+							else if (lineComponents[3] == null)
+								lineComponents[3] = token.Lexem;
+							else if (lineComponents[4] == null)
+								lineComponents[4] = token.Lexem;
+							else if (lineComponents[5] == null)
+								lineComponents[5] = token.Lexem;
+							else if (lineComponents[6] == null)
+								lineComponents[6] = token.Lexem;
 							break;
 
 						case Type.Whitespace:
@@ -304,16 +348,16 @@ namespace VNet
 		 */
 		private void ExecuteCommand(string[] command)
 		{
+			int intValue;
+			bool boolValue;
 			// Runs function corresponding to the command with the variables given
 			switch (command[0])
 			{
 				case "execute":
-					Settings.executeNext = true;
 
 					break;
 
 				case "label":
-					Settings.executeNext = true;
 					_assets.CreateLabel(command[2], command[1]);
 					break;
 
@@ -322,7 +366,6 @@ namespace VNet
 					break;
 
 				case "character":
-					Settings.executeNext = true;
 					if (command[3] != null)
 						_assets.CreateCharacter(command[1], command[2], command[3]);
 					else if (command[2] != null)
@@ -336,7 +379,6 @@ namespace VNet
 					break;
 
 				case "image":
-					Settings.executeNext = true;
 					if (command[3] == null)
 					{
 						_assets.CreateBackground(command[1], command[2]);
@@ -347,7 +389,90 @@ namespace VNet
 					}
 					break;
 
+				case "sound":
+					_assets.CreateSound(command[1], command[2]);
+					break;
+
+				case "music":
+					Settings.executeNext = true;
+					_assets.CreateSong(command[1], command[2]);
+					break;
+
+				case "int":
+					if (int.TryParse(command[2], out intValue))
+					{
+						_assets.CreateVariable(command[1], intValue);
+					}
+					break;
+
+				case "bool":
+					if (bool.TryParse(command[2], out boolValue))
+					{
+						_assets.CreateVariable(command[1], boolValue);
+					}
+					break;
+
+				case "if":
+					Variable var = _assets.variables.Find(i => i.name == command[1]);
+					if (var == null) break;
+					switch (var)
+					{
+						case Assets.Boolean boolVal:
+							if (bool.TryParse(command[2], out boolValue))
+							{
+								if (boolValue == boolVal.value)
+								{
+									JumpToLabel(command[3]);
+								}
+							}
+							break;
+						case Assets.Integer intVal:
+							if (int.TryParse(command[3], out intValue))
+							{
+								switch (command[2])
+								{
+									case "<" when intVal.value < intValue:
+									case ">" when intVal.value > intValue:
+									case "=" when intVal.value == intValue:
+										JumpToLabel(command[4]);
+										break;
+								}
+							}
+							break;
+					}
+					break;
+
+				case "add":
+					if (int.TryParse(command[2], out intValue))
+					{
+						_assets.IntegerAdd(command[1], intValue);
+					}
+					break;
+
+				case "subtract":
+					if (int.TryParse(command[2], out intValue))
+					{
+						_assets.IntegerSubtract(command[1], intValue);
+					}
+					break;
+
+				case "set":
+					if (int.TryParse(command[2], out intValue))
+					{
+						_assets.IntegerSet(command[1], intValue);
+					}
+					else if (bool.TryParse(command[2], out boolValue))
+					{
+						_assets.BooleanSet(command[1], boolValue);
+					}
+					break;
+
 				case "show":
+					if (command[1] == "choice")
+					{
+						Settings.executeNext = false;
+						ShowChoice(command[2]);
+					}
 					if (command.Contains("pause")) Settings.executeNext = false;
 					// Only parameter is name, therefore show as background
 					if (command[2] == null)
@@ -365,6 +490,10 @@ namespace VNet
 					break;
 
 				case "clear":
+					if (command.Contains("pause"))
+					{
+						Settings.executeNext = false;
+					}
 					if (command[1] != null)
 					{
 						ClearCharacters(command[1]);
@@ -376,18 +505,37 @@ namespace VNet
 					break;
 
 				case "play":
-					
+					if (command.Contains("pause"))
+					{
+						Settings.executeNext = false;
+					}
+					PlaySound(command[1], double.TryParse(command[2], NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var volume) ? volume : 1.0, command.Contains("r") || command.Contains("repeat"));
+					break;
+
+				case "stop":
+					if (command.Contains("pause"))
+					{
+						Settings.executeNext = false;
+					}
+					switch (command[1])
+					{
+						case "sound":
+							_soundEffectPlayer.Stop();
+							break;
+						case "music":
+							_backgroundMusicPlayer.Stop();
+							break;
+						default:
+							_soundEffectPlayer.Stop();
+							_backgroundMusicPlayer.Stop();
+							break;
+					}
 					break;
 
 				case "choice":
 					if (command[1] == "create")
 					{
 						_assets.CreateChoice(command[2]);
-					}
-					else if (command[1] == "display")
-					{
-						Settings.executeNext = false;
-						ShowChoice(command[2]);
 					}
 					else
 					{
@@ -476,20 +624,20 @@ namespace VNet
 					_environment.RightCharacter = selectedCharacter;
 					xOffset = 760;
 					yOffset = 0;
-					_centerCharacter.Source = selectedMood.image;
-					_centerCharacter.BeginAnimation(OpacityProperty, _fadeIn);
-					Canvas.SetLeft(_centerCharacter, xOffset);
-					Canvas.SetTop(_centerCharacter, yOffset);
+					_rightCharacter.Source = selectedMood.image;
+					_rightCharacter.BeginAnimation(OpacityProperty, _fadeIn);
+					Canvas.SetLeft(_rightCharacter, xOffset);
+					Canvas.SetTop(_rightCharacter, yOffset);
 				}
 				else
 				{
 					_environment.CenterCharacter = selectedCharacter;
 					xOffset = 380;
 					yOffset = 0;
-					_rightCharacter.Source = selectedMood.image;
-					_rightCharacter.BeginAnimation(OpacityProperty, _fadeIn);
-					Canvas.SetLeft(_rightCharacter, xOffset);
-					Canvas.SetTop(_rightCharacter, yOffset);
+					_centerCharacter.Source = selectedMood.image;
+					_centerCharacter.BeginAnimation(OpacityProperty, _fadeIn);
+					Canvas.SetLeft(_centerCharacter, xOffset);
+					Canvas.SetTop(_centerCharacter, yOffset);
 				}
 			}
 		}
@@ -595,6 +743,44 @@ namespace VNet
 			_textTimer.Stop();
 		}
 
+		/*
+		 * Checks if requested sound is an effect or song and plays in in appropriate sound player. If sound and song have the same name the sound takes precedence.
+		 */
+		private void PlaySound(string soundName, double volume, bool repeat = false)
+		{
+			var snd = _assets.sounds.Find(i => i.name == soundName);
+			if (snd == null)
+			{
+				snd = _assets.music.Find(i => i.name == soundName);
+				if (snd == null) return;
+				_backgroundMusicPlayer.Open(new Uri(snd.location));
+				if (repeat)
+				{
+					_backgroundMusicPlayer.MediaEnded += new EventHandler(RepeatPlayback);
+				}
+				_backgroundMusicPlayer.Volume = volume;
+				_backgroundMusicPlayer.Play();
+				return;
+			}
+			_soundEffectPlayer.Open(new Uri(snd.location));
+			if (repeat)
+			{
+				_soundEffectPlayer.MediaEnded += new EventHandler(RepeatPlayback);
+			}
+			_soundEffectPlayer.Volume = volume;
+			_soundEffectPlayer.Play();
+		}
+
+		private void RepeatPlayback(object sender, EventArgs e)
+		{
+			var player = (MediaPlayer) sender;
+			player.Position = TimeSpan.Zero;
+			player.Play();
+		}
+
+		/*
+		 * Pauses the gameplay and shows multiple buttons corresponding to choice options
+		 */
 		private void ShowChoice(string choiceName)
 		{
 			Settings.inChoice = true;
@@ -608,15 +794,16 @@ namespace VNet
 				Button button = new Button
 				{
 					Name = opt.destinationLabel,
-					Width = 480,
-					Height = 32,
-					Background = new SolidColorBrush(Color.FromArgb(128, 32, 32, 32))
+					Width = 960,
+					Height = 48,
+					Background = new SolidColorBrush(Color.FromArgb(192, 16, 16, 16))
 				};
 				TextBlock optionTextBlock = new TextBlock
 				{
 					Name = "optionTextBlock",
 					Text = opt.text,
-					FontSize = 16,
+					FontSize = 20,
+					FontWeight = FontWeights.Bold,
 					Foreground = new SolidColorBrush(Colors.White)
 				};
 				button.Content = optionTextBlock;
@@ -629,6 +816,9 @@ namespace VNet
 			}
 		}
 
+		/*
+		 * Event handler for clicking a button in choice, clears the choice, resumes gameplay and jumps to specified label
+		 */
 		private void ChoiceButtonClick(object sender, RoutedEventArgs e)
 		{
 			JumpToLabel(((Button)sender).Name);
@@ -663,6 +853,8 @@ namespace VNet
 			{
 				string[] command = ProcessScriptLine();
 				if (command == null) return;
+				if (Settings.SetupKeywordList.Contains(command[0]) || command[0] == null) continue;
+				
 				ExecuteCommand(command);
 			}
 		}
@@ -672,6 +864,12 @@ namespace VNet
 		 */
 		private void Game_OnMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
 		{
+			// Disable if not in game
+			if (!Settings.inGame)
+			{
+				return;
+			}
+			// Disable if currently in choice
 			if (Settings.inChoice)
 			{
 				return;

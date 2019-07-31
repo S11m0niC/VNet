@@ -6,9 +6,8 @@ using System.Threading.Tasks;
 
 namespace VNet.Assets
 {
-	public class Label
+	public class Label : Asset
 	{
-		public string name;
 		public int lineNumber;
 
 		public Label(string name, int lineNum)

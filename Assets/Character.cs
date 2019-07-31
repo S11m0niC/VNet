@@ -9,9 +9,8 @@ using System.Windows.Media.Imaging;
 
 namespace VNet.Assets
 {
-	public class Character
+	public class Character : Asset
 	{
-		public string name;
 		public Color color;
 		public List<Mood> moods;
 

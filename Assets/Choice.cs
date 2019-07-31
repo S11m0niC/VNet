@@ -6,9 +6,8 @@ using System.Threading.Tasks;
 
 namespace VNet.Assets
 {
-	public class Choice
+	public class Choice : Asset
 	{
-		public string name;
 		public string text;
 
 		public List<Option> options;
