@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
 using System.Windows;
@@ -33,9 +34,11 @@ namespace VNet
 		private LexicalAnalysis _lexical;
 		private GameEnvironment _environment;
 
+
 		// Game area elements
 		private TextBlock _textBlock;
 		private TextBlock _nameBlock;
+		private Image _blackBackgroundConstant;
 		private Image _backgroundImage;
 		private Image _leftCharacter;
 		private Image _rightCharacter;
@@ -51,41 +54,117 @@ namespace VNet
 	public Game()
 		{
 			InitializeComponent();
-			Startup();
 		}
 
 		private void Startup()
 		{
-			// Prepare the game area
-			_environment = new GameEnvironment();
 			_assets = new Assets.Assets();
+			_environment = new GameEnvironment();
+			_backgroundMusicPlayer = new MediaPlayer();
+			_soundEffectPlayer = new MediaPlayer();
+
+			_blackBackgroundConstant = new Image
+			{
+				Name = "blackBackground",
+				Source = _environment.CurrentBackground.image,
+				Stretch = Stretch.Uniform
+			};
+			ViewportContainer.Children.Add(_blackBackgroundConstant);
+			Panel.SetZIndex(_blackBackgroundConstant, 0);
 
 			_backgroundImage = new Image
 			{
 				Name = "backgroundImage",
 				Source = _environment.CurrentBackground.image,
 				Stretch = Stretch.Uniform
-		};
+			};
 			ViewportContainer.Children.Add(_backgroundImage);
-			Panel.SetZIndex(_backgroundImage, 0);
+			Panel.SetZIndex(_backgroundImage, 1);
+
+			_assets.backgrounds.Add(_environment.CurrentBackground);
+			Settings.inGame = false;
+
+			// Show splash screen while loading assets
+			DoubleAnimation splashScreenFadeIn = new DoubleAnimation
+			{
+				From = 0,
+				To = 1,
+				Duration = new Duration(TimeSpan.FromMilliseconds(500))
+			};
+			splashScreenFadeIn.Completed += SplashScreenFadeInCompleted;
+
+			_backgroundImage.Opacity = 0;
+			bool success = _assets.CreateBackground("splash_screen", ".\\assets\\splash.png", false);
+			if (success)
+			{
+				_backgroundImage.Source = _assets.backgrounds.Find(i => i.name == "splash_screen").image;
+			}
+			_backgroundImage.BeginAnimation(OpacityProperty, splashScreenFadeIn);
+		}
+
+		private void SplashScreenFadeInCompleted(object sender, EventArgs e)
+		{
+			DoubleAnimation splashScreenFadeOut = new DoubleAnimation
+			{
+				From = 1,
+				To = 0,
+				Duration = new Duration(TimeSpan.FromMilliseconds(2000))
+			};
+			splashScreenFadeOut.Completed += SplashScreenFadeOutCompleted;
+
+			_currentScript = new Script(Settings.StartScriptUri);
+			_lexical = new LexicalAnalysis(_currentScript);
+			_currentScript.currentLine = ProcessScript();
+
+			_backgroundImage.BeginAnimation(OpacityProperty, splashScreenFadeOut);
+		}
+		private void SplashScreenFadeOutCompleted(object sender, EventArgs e)
+		{
+			MainMenu();
+		}
+
+		/*
+		 * Loads main menu elements
+		 */
+		private void MainMenu()
+		{
+			NewGame();
+		}
+
+		private void ClearViewport()
+		{
+			ViewportContainer.Children.Clear();
+			ViewportContainer.Children.Add(_blackBackgroundConstant);
+			Panel.SetZIndex(_blackBackgroundConstant, 1);
+		}
+
+		/*
+		 * Create all onscreen elements for the game and enable gameplay
+		 */
+		private void NewGame()
+		{
+			ClearViewport();
+
+			ViewportContainer.Children.Add(_backgroundImage);
+			Panel.SetZIndex(_backgroundImage, 1);
 
 			_leftCharacter = new Image
 			{
 				Name = "leftCharacter",
 				Opacity = 0.0,
 				Stretch = Stretch.Uniform
-		};
+			};
 			ViewportContainer.Children.Add(_leftCharacter);
-			Panel.SetZIndex(_leftCharacter, 1);
+			Panel.SetZIndex(_leftCharacter, 2);
 
 			_centerCharacter = new Image
 			{
 				Name = "centerCharacter",
 				Opacity = 0.0,
 				Stretch = Stretch.Uniform
-		};
+			};
 			ViewportContainer.Children.Add(_centerCharacter);
-			Panel.SetZIndex(_centerCharacter, 1);
+			Panel.SetZIndex(_centerCharacter, 2);
 
 			_rightCharacter = new Image
 			{
@@ -94,7 +173,7 @@ namespace VNet
 				Stretch = Stretch.Uniform
 			};
 			ViewportContainer.Children.Add(_rightCharacter);
-			Panel.SetZIndex(_rightCharacter, 1);
+			Panel.SetZIndex(_rightCharacter, 2);
 
 			_nameBlock = new TextBlock
 			{
@@ -105,7 +184,7 @@ namespace VNet
 			ViewportContainer.Children.Add(_nameBlock);
 			Canvas.SetLeft(_nameBlock, 50);
 			Canvas.SetTop(_nameBlock, 560);
-			Panel.SetZIndex(_nameBlock, 2);
+			Panel.SetZIndex(_nameBlock, 3);
 
 			_textBlock = new TextBlock
 			{
@@ -121,20 +200,7 @@ namespace VNet
 			ViewportContainer.Children.Add(_textBlock);
 			Canvas.SetLeft(_textBlock, 50);
 			Canvas.SetTop(_textBlock, 600);
-			Panel.SetZIndex(_textBlock, 2);
-
-			_fadeIn = new DoubleAnimation
-			{
-				From = 0,
-				To = 1,
-				Duration = new Duration(TimeSpan.FromMilliseconds(500))
-			};
-			_fadeOut = new DoubleAnimation
-			{
-				From = 1,
-				To = 0,
-				Duration = new Duration(TimeSpan.FromMilliseconds(500))
-			};
+			Panel.SetZIndex(_textBlock, 3);
 
 			_textTimer = new DispatcherTimer
 			{
@@ -142,23 +208,14 @@ namespace VNet
 			};
 			_textTimer.Tick += TextTimerOnTick;
 
-			_backgroundMusicPlayer = new MediaPlayer();
-			_soundEffectPlayer = new MediaPlayer();
-
-			// Show startup image
-
-
-			// Process starting script and ready the gameplay for first input of user
-			_currentScript = new Script(Settings.StartScriptUri);
-			_lexical = new LexicalAnalysis(_currentScript);
-			_currentScript.currentLine = ProcessScript();
-
-			// Show main menu
 			Settings.inGame = true;
+			Settings.allowProgress = true;
+			TriggerNextCommand();
 		}
 
 		/*
-		 * Function processes script from start to finish, executing setup commands (creating characters, backgrounds, labels..)
+		 * Function processes script from start to finish, executing setup commands (creating characters, backgrounds, labels..).
+		 * At the end it sets current position in script to the first non-setup line
 		 */
 		private int ProcessScript()
 		{
@@ -381,7 +438,7 @@ namespace VNet
 				case "image":
 					if (command[3] == null)
 					{
-						_assets.CreateBackground(command[1], command[2]);
+						_assets.CreateBackground(command[1], command[2], true);
 					}
 					else
 					{
@@ -390,12 +447,11 @@ namespace VNet
 					break;
 
 				case "sound":
-					_assets.CreateSound(command[1], command[2]);
+					_assets.CreateSound(command[1], command[2], false);
 					break;
 
 				case "music":
-					Settings.executeNext = true;
-					_assets.CreateSong(command[1], command[2]);
+					_assets.CreateSound(command[1], command[2], true);
 					break;
 
 				case "int":
@@ -477,15 +533,15 @@ namespace VNet
 					// Only parameter is name, therefore show as background
 					if (command[2] == null)
 					{
-						ShowBackground(command[1]);
+						ShowBackground(command[1], 500);
 					}
 					// More parameters, show as character
 					else if (command[2] != null)
 					{
 						if (command[3] != null)
-							ShowCharacter(command[1], command[2], command[3]);
+							ShowCharacter(command[1], command[2], 500, command[3]);
 						else
-							ShowCharacter(command[1], command[2]);
+							ShowCharacter(command[1], command[2], 500);
 					}
 					break;
 
@@ -585,14 +641,21 @@ namespace VNet
 		/*
 		 * Function changes the currently showing background to the one with the given name
 		 */
-		private void ShowBackground(string bgName)
+		private void ShowBackground(string bgName, int fadeInDuration)
 		{
-			
+			_fadeIn = new DoubleAnimation
+			{
+				From = 0,
+				To = 1,
+				Duration = new Duration(TimeSpan.FromMilliseconds(fadeInDuration)),
+			};
+			_fadeIn.Completed += (sender, args) => { Settings.allowProgress = true; };
+
 			Background selectedBackground = _assets.backgrounds.Find(i => i.name == bgName);
 			if (selectedBackground != null)
 			{
+				Settings.allowProgress = false;
 				_environment.CurrentBackground = selectedBackground;
-
 				_backgroundImage.Source = selectedBackground.image;
 				_backgroundImage.BeginAnimation(OpacityProperty, _fadeIn);
 			}
@@ -601,12 +664,21 @@ namespace VNet
 		/*
 		 * Function shows a given character with the given sprite (mood) in the given position
 		 */
-		private void ShowCharacter(string chName, string moodName, string position = "")
+		private void ShowCharacter(string chName, string moodName, int fadeInDuration, string position = "")
 		{
+			_fadeIn = new DoubleAnimation
+			{
+				From = 0,
+				To = 1,
+				Duration = new Duration(TimeSpan.FromMilliseconds(fadeInDuration)),
+			};
+			_fadeIn.Completed += (sender, args) => { Settings.allowProgress = true; };
+
 			Character selectedCharacter = _assets.characters.Find(i => i.name == chName);
 			Mood selectedMood = selectedCharacter?.moods.Find(i => i.name == moodName);
 			if (selectedMood != null)
 			{
+				Settings.allowProgress = false;
 				double xOffset;
 				double yOffset;
 				if (position == "left")
@@ -649,20 +721,17 @@ namespace VNet
 		{
 			if (position == "left" && _environment.LeftCharacter != null)
 			{
-				_leftCharacter.BeginAnimation(OpacityProperty, _fadeOut);
 				_leftCharacter.Source = null;
 				_environment.LeftCharacter = null;
 
 			}
 			else if (position == "center" && _environment.CenterCharacter != null)
 			{
-				_centerCharacter.BeginAnimation(OpacityProperty, _fadeOut);
 				_centerCharacter.Source = null;
 				_environment.CenterCharacter = null;
 			}
 			else if (position == "right" && _environment.RightCharacter != null)
 			{
-				_rightCharacter.BeginAnimation(OpacityProperty, _fadeOut);
 				_rightCharacter.Source = null;
 				_environment.RightCharacter = null;
 			}
@@ -670,19 +739,16 @@ namespace VNet
 			{
 				if (_environment.LeftCharacter != null)
 				{
-					_leftCharacter.BeginAnimation(OpacityProperty, _fadeOut);
 					_leftCharacter.Source = null;
 					_environment.LeftCharacter = null;
 				}
 				if (_environment.CenterCharacter != null)
 				{
-					_centerCharacter.BeginAnimation(OpacityProperty, _fadeOut);
 					_centerCharacter.Source = null;
 					_environment.CenterCharacter = null;
 				}
 				if (_environment.RightCharacter != null)
 				{
-					_rightCharacter.BeginAnimation(OpacityProperty, _fadeOut);
 					_rightCharacter.Source = null;
 					_environment.RightCharacter = null;
 				}
@@ -783,7 +849,7 @@ namespace VNet
 		 */
 		private void ShowChoice(string choiceName)
 		{
-			Settings.inChoice = true;
+			Settings.allowProgress = false;
 			int textTop = 100;
 			Choice ch = _assets.choices.Find(i => i.name == choiceName);
 			_textBlock.Text = ch.text;
@@ -811,7 +877,7 @@ namespace VNet
 				ViewportContainer.Children.Add(button);
 				Canvas.SetLeft(button, Settings.windowWidth / 2 - button.Width / 2);
 				Canvas.SetTop(button, textTop);
-				Panel.SetZIndex(button, 3);
+				Panel.SetZIndex(button, 4);
 				_environment.onscreenButtonNames.Add(button.Name);
 			}
 		}
@@ -822,15 +888,15 @@ namespace VNet
 		private void ChoiceButtonClick(object sender, RoutedEventArgs e)
 		{
 			JumpToLabel(((Button)sender).Name);
-			Settings.inChoice = false;
-			TextBlock block = (TextBlock)LogicalTreeHelper.FindLogicalNode(ViewportContainer, "choiceTextBlock");
-			ViewportContainer.Children.Remove(block);
+			
 			while (_environment.onscreenButtonNames.Count > 0)
 			{
 				Button btn = (Button)LogicalTreeHelper.FindLogicalNode(ViewportContainer, _environment.onscreenButtonNames[0]);
 				ViewportContainer.Children.Remove(btn);
 				_environment.onscreenButtonNames.RemoveAt(0);
 			}
+
+			Settings.allowProgress = true;
 			TriggerNextCommand();
 		}
 
@@ -860,17 +926,12 @@ namespace VNet
 		}
 
 		/*
-		 * Click event on the window, triggers next line when ingame
+		 * Click event on window, triggers next line when ingame
 		 */
 		private void Game_OnMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
 		{
-			// Disable if not in game
-			if (!Settings.inGame)
-			{
-				return;
-			}
-			// Disable if currently in choice
-			if (Settings.inChoice)
+			// Disable if not in game or game currently not allowing progress (in choice, in animation...)
+			if (!Settings.inGame || !Settings.allowProgress)
 			{
 				return;
 			}
@@ -883,6 +944,14 @@ namespace VNet
 			}
 			// If text is displayed completely
 			TriggerNextCommand();
+		}
+
+		/*
+		 * Loaded event on window, runs startup procedure
+		 */
+		private void Game_OnLoaded(object sender, RoutedEventArgs e)
+		{
+			Startup();
 		}
 	}
 }

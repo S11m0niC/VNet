@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
@@ -32,14 +34,28 @@ namespace VNet.Assets
 
 		public void CreateCharacter(string name, string moodName, string imagePath)
 		{
-			var character = new Character(name, moodName, ConvertToAbsolutePath(imagePath));
-			characters.Add(character);
+			try
+			{
+				var character = new Character(name, moodName, ConvertToAbsolutePath(imagePath));
+				characters.Add(character);
+			}
+			catch (Exception e)
+			{
+				MessageBox.Show("Error when creating character " + name + "!\n\n" + e.Message);
+			}
 		}
 
 		public void CreateCharacter(string name, string imagePath)
 		{
-			var character = new Character(name, ConvertToAbsolutePath(imagePath));
-			characters.Add(character);
+			try
+			{
+				var character = new Character(name, ConvertToAbsolutePath(imagePath));
+				characters.Add(character);
+			}
+			catch (Exception e)
+			{
+				MessageBox.Show("Error when creating character " + name + "!\n\n" + e.Message);
+			}
 		}
 
 		public void CreateCharacter(string name)
@@ -50,8 +66,16 @@ namespace VNet.Assets
 
 		public void AddImageToCharacter(string charName, string moodName, string imagePath)
 		{
-			var selectedCharacter = characters.Find(i => i.name == charName);
-			selectedCharacter?.AddMoodImage(moodName, ConvertToAbsolutePath(imagePath));
+			try
+			{
+				var selectedCharacter = characters.Find(i => i.name == charName);
+				selectedCharacter?.AddMoodImage(moodName, ConvertToAbsolutePath(imagePath));
+
+			}
+			catch (Exception e)
+			{
+				MessageBox.Show("Error when adding image to character " + charName + "!\n\n" + e.Message);
+			}
 		}
 
 		public void SetCharacterColor(string charName, string r, string g, string b)
@@ -106,23 +130,45 @@ namespace VNet.Assets
 			ch.options.Add(new Option(optionText, optionLabel));
 		}
 
-		public void CreateBackground(string name, string imagePath)
+		public bool CreateBackground(string name, string imagePath, bool triggeredByScript)
 		{
-			var image = new BitmapImage(new Uri(ConvertToAbsolutePath(imagePath), UriKind.Absolute));
-			var background = new Background(name, new WriteableBitmap(image));
-			backgrounds.Add(background);
+			try
+			{
+				var image = new BitmapImage(new Uri(ConvertToAbsolutePath(imagePath), UriKind.Absolute));
+				var background = new Background(name, new WriteableBitmap(image));
+				backgrounds.Add(background);
+				return true;
+			}
+			catch (Exception e)
+			{
+				if (triggeredByScript)
+				{
+					MessageBox.Show("Error when creating background!\n\n" + e.Message);
+				}
+				return false;
+			}
 		}
 
-		public void CreateSound(string name, string path)
+		public void CreateSound(string name, string path, bool song)
 		{
-			Sound snd = new Sound(name, ConvertToAbsolutePath(path));
-			sounds.Add(snd);
-		}
-
-		public void CreateSong(string name, string path)
-		{
-			Sound snd = new Sound(name, ConvertToAbsolutePath(path));
-			music.Add(snd);
+			try
+			{
+				Sound snd = new Sound(name, ConvertToAbsolutePath(path));
+				if (song)
+				{
+					music.Add(snd);
+				}
+				else
+				{
+					sounds.Add(snd);
+				}
+				
+			}
+			catch(Exception e)
+			{
+				MessageBox.Show("Error when creating sound " + name + "!\n\n" + e.Message);
+			}
+			
 		}
 
 		public void CreateVariable(string name, int value)
