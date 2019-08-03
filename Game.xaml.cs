@@ -38,8 +38,10 @@ namespace VNet
 		// Game area elements
 		private TextBlock _textBlock;
 		private TextBlock _nameBlock;
+
 		private Image _blackBackgroundConstant;
 		private Image _backgroundImage;
+
 		private Image _leftCharacter;
 		private Image _rightCharacter;
 		private Image _centerCharacter;
@@ -51,37 +53,52 @@ namespace VNet
 		private MediaPlayer _backgroundMusicPlayer;
 		private MediaPlayer _soundEffectPlayer;
 
-	public Game()
+		public Game()
 		{
 			InitializeComponent();
 		}
 
+		/*
+		 * Loaded event on window, runs startup procedure
+		 */
+		private void Game_OnLoaded(object sender, RoutedEventArgs e)
+		{
+			Startup();
+		}
+
 		private void Startup()
 		{
+			// Create global objects needed at this point
 			_assets = new Assets.Assets();
 			_environment = new GameEnvironment();
 			_backgroundMusicPlayer = new MediaPlayer();
 			_soundEffectPlayer = new MediaPlayer();
 
+			// Create default black background
+			WriteableBitmap black = BitmapFactory.New(1280, 720);
+			black.Clear(Colors.Black);
+			Background default_black = new Background("default_black", black);
+			_assets.backgrounds.Add(default_black);
+
 			_blackBackgroundConstant = new Image
 			{
 				Name = "blackBackground",
-				Source = _environment.CurrentBackground.image,
+				Source = black,
 				Stretch = Stretch.Uniform
 			};
 			ViewportContainer.Children.Add(_blackBackgroundConstant);
 			Panel.SetZIndex(_blackBackgroundConstant, 0);
 
+			// Create background element which will display chosen backgrounds
 			_backgroundImage = new Image
 			{
 				Name = "backgroundImage",
-				Source = _environment.CurrentBackground.image,
+				Source = null,
 				Stretch = Stretch.Uniform
 			};
 			ViewportContainer.Children.Add(_backgroundImage);
 			Panel.SetZIndex(_backgroundImage, 1);
 
-			_assets.backgrounds.Add(_environment.CurrentBackground);
 			Settings.inGame = false;
 
 			// Show splash screen while loading assets
@@ -89,7 +106,7 @@ namespace VNet
 			{
 				From = 0,
 				To = 1,
-				Duration = new Duration(TimeSpan.FromMilliseconds(500))
+				Duration = new Duration(TimeSpan.FromMilliseconds(1000))
 			};
 			splashScreenFadeIn.Completed += SplashScreenFadeInCompleted;
 
@@ -108,7 +125,7 @@ namespace VNet
 			{
 				From = 1,
 				To = 0,
-				Duration = new Duration(TimeSpan.FromMilliseconds(2000))
+				Duration = new Duration(TimeSpan.FromMilliseconds(1000))
 			};
 			splashScreenFadeOut.Completed += SplashScreenFadeOutCompleted;
 
@@ -128,14 +145,130 @@ namespace VNet
 		 */
 		private void MainMenu()
 		{
-			NewGame();
+			ClearViewport(true);
+
+			Button newGameButton = new Button
+			{
+				Name = "newGameButton",
+				Width = 320,
+				Height = 48,
+				Background = new SolidColorBrush(Color.FromArgb(192, 16, 16, 16))
+			};
+			TextBlock newGameTextBlock = new TextBlock
+			{
+				Name = "newGameTextBlock",
+				Text = "New Game",
+				FontSize = 20,
+				FontWeight = FontWeights.Bold,
+				Foreground = new SolidColorBrush(Colors.White)
+			};
+			newGameButton.Content = newGameTextBlock;
+			newGameButton.AddHandler(Button.ClickEvent, new RoutedEventHandler(NewGameButtonClick));
+			ViewportContainer.Children.Add(newGameButton);
+			Canvas.SetLeft(newGameButton, 100);
+			Canvas.SetTop(newGameButton, 200);
+			Panel.SetZIndex(newGameButton, 2);
+
+			Button loadGameButton = new Button
+			{
+				Name = "newGameButton",
+				Width = 320,
+				Height = 48,
+				Background = new SolidColorBrush(Color.FromArgb(192, 16, 16, 16))
+			};
+			TextBlock loadGameTextBlock = new TextBlock
+			{
+				Name = "loadGameTextBlock",
+				Text = "Load Game",
+				FontSize = 20,
+				FontWeight = FontWeights.Bold,
+				Foreground = new SolidColorBrush(Colors.White)
+			};
+			loadGameButton.Content = loadGameTextBlock;
+			loadGameButton.AddHandler(Button.ClickEvent, new RoutedEventHandler(LoadGameButtonClick));
+			ViewportContainer.Children.Add(loadGameButton);
+			Canvas.SetLeft(loadGameButton, 100);
+			Canvas.SetTop(loadGameButton, 300);
+			Panel.SetZIndex(loadGameButton, 2);
+
+			Button optionsButton = new Button
+			{
+				Name = "optionsButton",
+				Width = 320,
+				Height = 48,
+				Background = new SolidColorBrush(Color.FromArgb(192, 16, 16, 16))
+			};
+			TextBlock optionsTextBlock = new TextBlock
+			{
+				Name = "optionsTextBlock",
+				Text = "Options",
+				FontSize = 20,
+				FontWeight = FontWeights.Bold,
+				Foreground = new SolidColorBrush(Colors.White)
+			};
+			optionsButton.Content = optionsTextBlock;
+			optionsButton.AddHandler(Button.ClickEvent, new RoutedEventHandler(OptionsButtonClick));
+			ViewportContainer.Children.Add(optionsButton);
+			Canvas.SetLeft(optionsButton, 100);
+			Canvas.SetTop(optionsButton, 400);
+			Panel.SetZIndex(optionsButton, 2);
+
+			// Menu background image and music
+			ShowBackground("menu_background", 10);
+			PlaySound("menu_music", 1, true);
 		}
 
-		private void ClearViewport()
+		private void NewGameButtonClick(object sender, RoutedEventArgs e)
 		{
-			ViewportContainer.Children.Clear();
-			ViewportContainer.Children.Add(_blackBackgroundConstant);
-			Panel.SetZIndex(_blackBackgroundConstant, 1);
+			ClearViewport(false);
+			StopSound();
+			StopMusic();
+			NewGame();
+		}
+		
+		private void LoadGameButtonClick(object sender, RoutedEventArgs e)
+		{
+			ShowLoadGameScreen();
+		}
+		
+		private void OptionsButtonClick(object sender, RoutedEventArgs e)
+		{
+			ShowOptionsScreen();
+		}
+
+		/*
+		 * Clears the screen of all elements, if so specified keep background
+		 */
+		private void ClearViewport(bool keepBackground)
+		{
+			int allowedElementsCount = 0;
+			while (ViewportContainer.Children.Count > allowedElementsCount)
+			{
+				// If child is not an image remove it
+				if (!(ViewportContainer.Children[allowedElementsCount] is Image backgroundImg))
+				{
+					ViewportContainer.Children.RemoveAt(allowedElementsCount);
+				}
+				// If child is an image, check the name and remove if not background.
+				// If it is background and keepBackground is false, set source to null (keep UI element as backgrounds are constant)
+				else
+				{
+					if ((backgroundImg.Name == "blackBackground") || ( keepBackground && (backgroundImg.Name == "backgroundImage") ))
+					{
+						allowedElementsCount++;
+					}
+					else if (!keepBackground && backgroundImg.Name == "backgroundImage")
+					{
+						backgroundImg.Source = null;
+						allowedElementsCount++;
+					}
+					else
+					{
+						ViewportContainer.Children.RemoveAt(allowedElementsCount);
+					}
+				}
+			}
+			this.UpdateLayout();
 		}
 
 		/*
@@ -143,11 +276,6 @@ namespace VNet
 		 */
 		private void NewGame()
 		{
-			ClearViewport();
-
-			ViewportContainer.Children.Add(_backgroundImage);
-			Panel.SetZIndex(_backgroundImage, 1);
-
 			_leftCharacter = new Image
 			{
 				Name = "leftCharacter",
@@ -211,6 +339,24 @@ namespace VNet
 			Settings.inGame = true;
 			Settings.allowProgress = true;
 			TriggerNextCommand();
+		}
+
+		/*
+		 * Show screen containing all saved games found allow user to load a game
+		 */
+		private void ShowLoadGameScreen()
+		{
+			ClearViewport(true);
+
+		}
+
+		/*
+		 * Show screen containing various options like text speed, music/sound volume...
+		 */
+		private void ShowOptionsScreen()
+		{
+			ClearViewport(true);
+
 		}
 
 		/*
@@ -550,7 +696,12 @@ namespace VNet
 					{
 						Settings.executeNext = false;
 					}
-					if (command[1] != null)
+
+					if (command[1] == "background")
+					{
+						ClearBackground();
+					}
+					else if (command[1] != null)
 					{
 						ClearCharacters(command[1]);
 					}
@@ -655,10 +806,19 @@ namespace VNet
 			if (selectedBackground != null)
 			{
 				Settings.allowProgress = false;
-				_environment.CurrentBackground = selectedBackground;
+				_environment.currentBackgroundName = selectedBackground.name;
 				_backgroundImage.Source = selectedBackground.image;
 				_backgroundImage.BeginAnimation(OpacityProperty, _fadeIn);
 			}
+		}
+
+		/*
+		 * Clears the background. This shows the default black background element, but the original background UI element remains as it is constant.
+		 */
+		private void ClearBackground()
+		{
+			_environment.currentBackgroundName = null;
+			_backgroundImage.Source = null;
 		}
 
 		/*
@@ -683,7 +843,7 @@ namespace VNet
 				double yOffset;
 				if (position == "left")
 				{
-					_environment.LeftCharacter = selectedCharacter;
+					_environment.leftCharacterName = selectedCharacter.name;
 					xOffset = 0;
 					yOffset = 0;
 					_leftCharacter.Source = selectedMood.image;
@@ -693,7 +853,7 @@ namespace VNet
 				}
 				else if (position == "right")
 				{
-					_environment.RightCharacter = selectedCharacter;
+					_environment.rightCharacterName = selectedCharacter.name;
 					xOffset = 760;
 					yOffset = 0;
 					_rightCharacter.Source = selectedMood.image;
@@ -703,7 +863,7 @@ namespace VNet
 				}
 				else
 				{
-					_environment.CenterCharacter = selectedCharacter;
+					_environment.centerCharacterName = selectedCharacter.name;
 					xOffset = 380;
 					yOffset = 0;
 					_centerCharacter.Source = selectedMood.image;
@@ -719,38 +879,38 @@ namespace VNet
 		 */
 		private void ClearCharacters(string position = "")
 		{
-			if (position == "left" && _environment.LeftCharacter != null)
+			if (position == "left" && _environment.leftCharacterName != null)
 			{
 				_leftCharacter.Source = null;
-				_environment.LeftCharacter = null;
+				_environment.leftCharacterName = null;
 
 			}
-			else if (position == "center" && _environment.CenterCharacter != null)
+			else if (position == "center" && _environment.centerCharacterName != null)
 			{
 				_centerCharacter.Source = null;
-				_environment.CenterCharacter = null;
+				_environment.centerCharacterName = null;
 			}
-			else if (position == "right" && _environment.RightCharacter != null)
+			else if (position == "right" && _environment.rightCharacterName != null)
 			{
 				_rightCharacter.Source = null;
-				_environment.RightCharacter = null;
+				_environment.rightCharacterName = null;
 			}
 			else
 			{
-				if (_environment.LeftCharacter != null)
+				if (_environment.leftCharacterName != null)
 				{
 					_leftCharacter.Source = null;
-					_environment.LeftCharacter = null;
+					_environment.leftCharacterName = null;
 				}
-				if (_environment.CenterCharacter != null)
+				if (_environment.centerCharacterName != null)
 				{
 					_centerCharacter.Source = null;
-					_environment.CenterCharacter = null;
+					_environment.centerCharacterName = null;
 				}
-				if (_environment.RightCharacter != null)
+				if (_environment.rightCharacterName != null)
 				{
 					_rightCharacter.Source = null;
-					_environment.RightCharacter = null;
+					_environment.rightCharacterName = null;
 				}
 			}
 		}
@@ -819,29 +979,60 @@ namespace VNet
 			{
 				snd = _assets.music.Find(i => i.name == soundName);
 				if (snd == null) return;
+				_environment.currentSongName = snd.name;
 				_backgroundMusicPlayer.Open(new Uri(snd.location));
 				if (repeat)
 				{
-					_backgroundMusicPlayer.MediaEnded += new EventHandler(RepeatPlayback);
+					_backgroundMusicPlayer.MediaEnded -= EndSong;
+					_backgroundMusicPlayer.MediaEnded += RepeatPlayback;
 				}
-				_backgroundMusicPlayer.Volume = volume;
+				else
+				{
+					_backgroundMusicPlayer.MediaEnded -= RepeatPlayback;
+					_backgroundMusicPlayer.MediaEnded += EndSong;
+				}
+				_backgroundMusicPlayer.Volume = volume * Settings.MusicVolumeMultiplier;
 				_backgroundMusicPlayer.Play();
 				return;
 			}
 			_soundEffectPlayer.Open(new Uri(snd.location));
 			if (repeat)
 			{
-				_soundEffectPlayer.MediaEnded += new EventHandler(RepeatPlayback);
+				_soundEffectPlayer.MediaEnded += RepeatPlayback;
 			}
-			_soundEffectPlayer.Volume = volume;
+			else
+			{
+				_soundEffectPlayer.MediaEnded -= RepeatPlayback;
+			}
+			_soundEffectPlayer.Volume = volume * Settings.SoundVolumeMultiplier;
 			_soundEffectPlayer.Play();
 		}
-
 		private void RepeatPlayback(object sender, EventArgs e)
 		{
 			var player = (MediaPlayer) sender;
 			player.Position = TimeSpan.Zero;
 			player.Play();
+		}
+		private void EndSong(object sender, EventArgs e)
+		{
+			_environment.currentSongName = null;
+		}
+
+		/*
+		 * Stops current sound playback
+		 */
+		private void StopSound()
+		{
+			_soundEffectPlayer.Stop();
+		}
+
+		/*
+		 * Stops current music playback
+		 */
+		private void StopMusic()
+		{
+			_backgroundMusicPlayer.Stop();
+			_environment.currentSongName = null;
 		}
 
 		/*
@@ -944,14 +1135,6 @@ namespace VNet
 			}
 			// If text is displayed completely
 			TriggerNextCommand();
-		}
-
-		/*
-		 * Loaded event on window, runs startup procedure
-		 */
-		private void Game_OnLoaded(object sender, RoutedEventArgs e)
-		{
-			Startup();
 		}
 	}
 }
