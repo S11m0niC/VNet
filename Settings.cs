@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.RightsManagement;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -32,8 +33,10 @@ namespace VNet
 		/*
 		 * Settings adjusted in the settings screen
 		 */
-		public static int TextDisplaySpeedInMiliseconds = 20;
-		public static double SoundVolumeMultiplier = 1.0;
-		public static double MusicVolumeMultiplier = 1.0;
+		public static int textDisplaySpeedInMiliseconds = 20;
+		public static double soundVolumeMultiplier = 1.0;
+		public static double musicVolumeMultiplier = 1.0;
+		public static bool colorCharacterNames = false;
+		public static bool colorTextBorders = true;
 	}
 }

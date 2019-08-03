@@ -17,18 +17,21 @@ namespace VNet.Assets
 		public Character(string name)
 		{
 			this.name = name;
+			color = Colors.White;
 			moods = new List<Mood>();
 		}
 
 		public Character(string name, string imagePath)
 		{
 			this.name = name;
+			color = Colors.White;
 			moods = new List<Mood> {new Mood("default", imagePath)};
 		}
 
 		public Character(string name, string moodName, string imagePath)
 		{
 			this.name = name;
+			color = Colors.White;
 			moods = new List<Mood> {new Mood(moodName, imagePath)};
 		}
 

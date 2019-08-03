@@ -9,11 +9,13 @@ using System.Threading.Tasks;
 using System.Timers;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using System.Windows.Media.Effects;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
@@ -38,6 +40,8 @@ namespace VNet
 		// Game area elements
 		private TextBlock _textBlock;
 		private TextBlock _nameBlock;
+		private Border _textBlockBorder;
+		private Border _nameBlockBorder;
 
 		private Image _blackBackgroundConstant;
 		private Image _backgroundImage;
@@ -137,15 +141,28 @@ namespace VNet
 		}
 		private void SplashScreenFadeOutCompleted(object sender, EventArgs e)
 		{
-			MainMenu();
+			MainMenu(true);
 		}
 
 		/*
 		 * Loads main menu elements
 		 */
-		private void MainMenu()
+		private void MainMenu(bool firstTime)
 		{
 			ClearViewport(true);
+
+			TextBlock gameNameTextBlock = new TextBlock
+			{
+				Name = "gameNameTextBlock",
+				Text = "VNet",
+				FontSize = 48,
+				FontWeight = FontWeights.Bold,
+				Foreground = new SolidColorBrush(Colors.AliceBlue)
+			};
+			ViewportContainer.Children.Add(gameNameTextBlock);
+			Canvas.SetLeft(gameNameTextBlock, 100);
+			Canvas.SetTop(gameNameTextBlock, 50);
+			Panel.SetZIndex(gameNameTextBlock, 2);
 
 			Button newGameButton = new Button
 			{
@@ -214,8 +231,11 @@ namespace VNet
 			Panel.SetZIndex(optionsButton, 2);
 
 			// Menu background image and music
-			ShowBackground("menu_background", 10);
-			PlaySound("menu_music", 1, true);
+			if (firstTime)
+			{
+				ShowBackground("menu_background", 10);
+				PlaySound("menu_music", 1, true);
+			}
 		}
 
 		private void NewGameButtonClick(object sender, RoutedEventArgs e)
@@ -228,11 +248,13 @@ namespace VNet
 		
 		private void LoadGameButtonClick(object sender, RoutedEventArgs e)
 		{
+			ClearViewport(true);
 			ShowLoadGameScreen();
 		}
 		
 		private void OptionsButtonClick(object sender, RoutedEventArgs e)
 		{
+			ClearViewport(true);
 			ShowOptionsScreen();
 		}
 
@@ -255,6 +277,7 @@ namespace VNet
 				{
 					if ((backgroundImg.Name == "blackBackground") || ( keepBackground && (backgroundImg.Name == "backgroundImage") ))
 					{
+						backgroundImg.Effect = null;
 						allowedElementsCount++;
 					}
 					else if (!keepBackground && backgroundImg.Name == "backgroundImage")
@@ -272,7 +295,7 @@ namespace VNet
 		}
 
 		/*
-		 * Create all onscreen elements for the game and enable gameplay
+		 * Create all onscreen elements for the game and start gameplay
 		 */
 		private void NewGame()
 		{
@@ -308,31 +331,48 @@ namespace VNet
 				Name = "nameBlock",
 				FontSize = 24,
 				FontWeight = FontWeights.ExtraBold,
+				MinWidth = 180,
+				Height = 40,
+				Padding = new Thickness(30,5,5,5),
+				Background = new SolidColorBrush(Color.FromArgb(148, 0, 0, 0))
 			};
-			ViewportContainer.Children.Add(_nameBlock);
-			Canvas.SetLeft(_nameBlock, 50);
-			Canvas.SetTop(_nameBlock, 560);
-			Panel.SetZIndex(_nameBlock, 3);
+			_nameBlockBorder = new Border
+			{
+				BorderThickness = new Thickness(0, 3, 3, 0),
+				BorderBrush = new SolidColorBrush(Colors.White),
+				Child = _nameBlock,
+			};
+			ViewportContainer.Children.Add(_nameBlockBorder);
+			Canvas.SetLeft(_nameBlockBorder, 0);
+			Canvas.SetTop(_nameBlockBorder, 560);
+			Panel.SetZIndex(_nameBlockBorder, 3);
 
 			_textBlock = new TextBlock
 			{
 				Name = "textBlock",
-				Width = 1180.0,
-				Height = 120.0,
+				Width = Settings.windowWidth,
+				Height = 120,
+				Padding = new Thickness(30, 10, 30, 10),
 				FontSize = 21,
 				FontWeight = FontWeights.Bold,
 				Foreground = new SolidColorBrush(Colors.AliceBlue),
-				Background = new SolidColorBrush(Color.FromArgb(128, 0, 0, 0)),
+				Background = new SolidColorBrush(Color.FromArgb(148, 0, 0, 0)),
 				TextWrapping = TextWrapping.Wrap
 			};
-			ViewportContainer.Children.Add(_textBlock);
-			Canvas.SetLeft(_textBlock, 50);
-			Canvas.SetTop(_textBlock, 600);
-			Panel.SetZIndex(_textBlock, 3);
+			_textBlockBorder = new Border
+			{
+				BorderThickness = new Thickness(0, 3, 3, 0),
+				BorderBrush = new SolidColorBrush(Colors.White),
+				Child = _textBlock,
+			};
+			ViewportContainer.Children.Add(_textBlockBorder);
+			Canvas.SetLeft(_textBlockBorder, 0);
+			Canvas.SetTop(_textBlockBorder, 600);
+			Panel.SetZIndex(_textBlockBorder, 3);
 
 			_textTimer = new DispatcherTimer
 			{
-				Interval = TimeSpan.FromMilliseconds(Settings.TextDisplaySpeedInMiliseconds)
+				Interval = TimeSpan.FromMilliseconds(Settings.textDisplaySpeedInMiliseconds)
 			};
 			_textTimer.Tick += TextTimerOnTick;
 
@@ -342,12 +382,11 @@ namespace VNet
 		}
 
 		/*
-		 * Show screen containing all saved games found allow user to load a game
+		 * Show screen containing all saved games found, allow user to load a game
 		 */
 		private void ShowLoadGameScreen()
 		{
-			ClearViewport(true);
-
+			
 		}
 
 		/*
@@ -355,8 +394,202 @@ namespace VNet
 		 */
 		private void ShowOptionsScreen()
 		{
-			ClearViewport(true);
+			TextBlock optionsTextBlock = new TextBlock
+			{
+				Name = "gameNameTextBlock",
+				Text = "Options",
+				FontSize = 48,
+				FontWeight = FontWeights.Bold,
+				Foreground = new SolidColorBrush(Colors.AliceBlue)
+			};
+			ViewportContainer.Children.Add(optionsTextBlock);
+			Canvas.SetLeft(optionsTextBlock, 100);
+			Canvas.SetTop(optionsTextBlock, 50);
+			Panel.SetZIndex(optionsTextBlock, 2);
 
+			// Text speed setting
+			TextBlock textSpeedTextBlock = new TextBlock
+			{
+				Name = "textSpeedTextBlock",
+				Text = "Text speed",
+				FontSize = 20,
+				FontWeight = FontWeights.Bold,
+				Foreground = new SolidColorBrush(Colors.White)
+			};
+			ViewportContainer.Children.Add(textSpeedTextBlock);
+			Canvas.SetLeft(textSpeedTextBlock, 100);
+			Canvas.SetTop(textSpeedTextBlock, 200);
+			Panel.SetZIndex(textSpeedTextBlock, 2);
+
+			Slider textSpeedSlider = new Slider
+			{
+				Width = 320,
+				TickPlacement = TickPlacement.BottomRight,
+				Minimum = 0.01,
+				Maximum = 0.2,
+				Value = 2.0 / Settings.textDisplaySpeedInMiliseconds,
+				TickFrequency = 0.01,
+				IsSnapToTickEnabled = true
+			};
+			textSpeedSlider.ValueChanged += (sender, args) =>
+			{
+				Settings.textDisplaySpeedInMiliseconds = (int)Math.Round(2.0 / textSpeedSlider.Value);
+			};
+			ViewportContainer.Children.Add(textSpeedSlider);
+			Canvas.SetLeft(textSpeedSlider, 400);
+			Canvas.SetTop(textSpeedSlider, 200);
+			Panel.SetZIndex(textSpeedSlider, 2);
+
+			// Music volume setting
+			TextBlock musicVolumeTextBlock = new TextBlock
+			{
+				Name = "musicVolumeTextBlock",
+				Text = "Music volume",
+				FontSize = 20,
+				FontWeight = FontWeights.Bold,
+				Foreground = new SolidColorBrush(Colors.White)
+			};
+			ViewportContainer.Children.Add(musicVolumeTextBlock);
+			Canvas.SetLeft(musicVolumeTextBlock, 100);
+			Canvas.SetTop(musicVolumeTextBlock, 250);
+			Panel.SetZIndex(musicVolumeTextBlock, 2);
+
+			Slider musicVolumeSlider = new Slider
+			{
+				Width = 320,
+				TickPlacement = TickPlacement.BottomRight,
+				Minimum = 0,
+				Maximum = 1,
+				Value = Settings.musicVolumeMultiplier,
+				TickFrequency = 0.05,
+				IsSnapToTickEnabled = true
+			};
+			musicVolumeSlider.ValueChanged += (sender, args) =>
+			{
+				Settings.musicVolumeMultiplier = musicVolumeSlider.Value;
+				_backgroundMusicPlayer.Volume = musicVolumeSlider.Value;
+			};
+			ViewportContainer.Children.Add(musicVolumeSlider);
+			Canvas.SetLeft(musicVolumeSlider, 400);
+			Canvas.SetTop(musicVolumeSlider, 250);
+			Panel.SetZIndex(musicVolumeSlider, 2);
+
+			// Sound volume setting
+			TextBlock soundVolumeTextBlock = new TextBlock
+			{
+				Name = "soundVolumeTextBlock",
+				Text = "Sound effects volume",
+				FontSize = 20,
+				FontWeight = FontWeights.Bold,
+				Foreground = new SolidColorBrush(Colors.White)
+			};
+			ViewportContainer.Children.Add(soundVolumeTextBlock);
+			Canvas.SetLeft(soundVolumeTextBlock, 100);
+			Canvas.SetTop(soundVolumeTextBlock, 300);
+			Panel.SetZIndex(soundVolumeTextBlock, 2);
+
+			Slider soundVolumeSlider = new Slider
+			{
+				Width = 320,
+				TickPlacement = TickPlacement.BottomRight,
+				Minimum = 0,
+				Maximum = 1,
+				Value = Settings.soundVolumeMultiplier,
+				TickFrequency = 0.05,
+				IsSnapToTickEnabled = true
+			};
+			soundVolumeSlider.ValueChanged += (sender, args) =>
+			{
+				Settings.soundVolumeMultiplier = soundVolumeSlider.Value;
+				_soundEffectPlayer.Volume = soundVolumeSlider.Value;
+			};
+			ViewportContainer.Children.Add(soundVolumeSlider);
+			Canvas.SetLeft(soundVolumeSlider, 400);
+			Canvas.SetTop(soundVolumeSlider, 300);
+			Panel.SetZIndex(soundVolumeSlider, 2);
+
+			Button backButton = new Button
+			{
+				Name = "backButton",
+				Width = 320,
+				Height = 48,
+				Background = new SolidColorBrush(Color.FromArgb(192, 16, 16, 16))
+			};
+			TextBlock backTextBlock = new TextBlock
+			{
+				Name = "backTextBlock",
+				Text = "Back",
+				FontSize = 20,
+				FontWeight = FontWeights.Bold,
+				Foreground = new SolidColorBrush(Colors.White)
+			};
+			backButton.Content = backTextBlock;
+			backButton.Click += (sender, args) =>
+			{
+				MainMenu(false);
+			};
+			ViewportContainer.Children.Add(backButton);
+			Canvas.SetLeft(backButton, 100);
+			Canvas.SetTop(backButton, 600);
+			Panel.SetZIndex(backButton, 2);
+
+			// Color character names setting
+			TextBlock colorNamesTextBlock = new TextBlock
+			{
+				Name = "colorNamesTextBlock",
+				Text = "Color character names",
+				FontSize = 20,
+				FontWeight = FontWeights.Bold,
+				Foreground = new SolidColorBrush(Colors.White)
+			};
+			ViewportContainer.Children.Add(colorNamesTextBlock);
+			Canvas.SetLeft(colorNamesTextBlock, 100);
+			Canvas.SetTop(colorNamesTextBlock, 350);
+			Panel.SetZIndex(colorNamesTextBlock, 2);
+
+			CheckBox colorNamesCheckBox = new CheckBox
+			{
+				Name = "colorNamesCheckBox",
+				IsChecked = Settings.colorCharacterNames
+			};
+			colorNamesCheckBox.Checked += (sender, args) => { Settings.colorCharacterNames = true; };
+			colorNamesCheckBox.Unchecked += (sender, args) => { Settings.colorCharacterNames = false; };
+			ViewportContainer.Children.Add(colorNamesCheckBox);
+			Canvas.SetLeft(colorNamesCheckBox, 400);
+			Canvas.SetTop(colorNamesCheckBox, 350);
+			Panel.SetZIndex(colorNamesCheckBox, 2);
+
+			// Color text box border setting
+			TextBlock colorBordersTextBlock = new TextBlock
+			{
+				Name = "colorBordersTextBlock",
+				Text = "Color text borders",
+				FontSize = 20,
+				FontWeight = FontWeights.Bold,
+				Foreground = new SolidColorBrush(Colors.White)
+			};
+			ViewportContainer.Children.Add(colorBordersTextBlock);
+			Canvas.SetLeft(colorBordersTextBlock, 100);
+			Canvas.SetTop(colorBordersTextBlock, 400);
+			Panel.SetZIndex(colorBordersTextBlock, 2);
+
+			CheckBox colorBordersCheckBox = new CheckBox
+			{
+				Name = "colorBordersCheckBox",
+				IsChecked = Settings.colorTextBorders
+			};
+			colorBordersCheckBox.Checked += (sender, args) => { Settings.colorTextBorders = true; };
+			colorBordersCheckBox.Unchecked += (sender, args) => { Settings.colorTextBorders = false; };
+			ViewportContainer.Children.Add(colorBordersCheckBox);
+			Canvas.SetLeft(colorBordersCheckBox, 400);
+			Canvas.SetTop(colorBordersCheckBox, 400);
+			Panel.SetZIndex(colorBordersCheckBox, 2);
+
+			// Background blur
+			BlurEffect blur = new BlurEffect { Radius = 0 };
+			DoubleAnimation blurAnimation = new DoubleAnimation(0.0, 5.0, new Duration(TimeSpan.FromMilliseconds(300)));
+			_backgroundImage.Effect = blur;
+			blur.BeginAnimation(BlurEffect.RadiusProperty, blurAnimation);
 		}
 
 		/*
@@ -923,14 +1156,52 @@ namespace VNet
 			Character selChar = _assets.characters.Find(i => i.name == characterName);
 			if (selChar != null)
 			{
-				_nameBlock.Foreground = new SolidColorBrush(selChar.color);
+				if (Settings.colorCharacterNames)
+				{
+					_nameBlock.Foreground = new SolidColorBrush(selChar.color);
+				}
+				else
+				{
+					_nameBlock.Foreground = new SolidColorBrush(Colors.White);
+				}
+
+				if (Settings.colorTextBorders)
+				{
+					_nameBlockBorder.BorderBrush = new SolidColorBrush(selChar.color);
+					_textBlockBorder.BorderBrush = new SolidColorBrush(selChar.color);
+				}
+				else
+				{
+					_nameBlockBorder.BorderBrush = new SolidColorBrush(Colors.White);
+					_textBlockBorder.BorderBrush = new SolidColorBrush(Colors.White);
+				}
 			}
 			else
 			{
-				_nameBlock.Foreground = new LinearGradientBrush(
+				var gradientBrush = new LinearGradientBrush(
 					Color.FromRgb(32, 32, 32),
 					Color.FromRgb(64, 64, 64),
-					45.0);
+					30.0);
+				var solidBrush = new SolidColorBrush(Color.FromRgb(48, 48, 48));
+				if (Settings.colorCharacterNames)
+				{
+					_nameBlock.Foreground = gradientBrush;
+				}
+				else
+				{
+					_nameBlock.Foreground = new SolidColorBrush(Colors.White);
+				}
+
+				if (Settings.colorTextBorders)
+				{
+					_nameBlockBorder.BorderBrush = solidBrush;
+					_textBlockBorder.BorderBrush = solidBrush;
+				}
+				else
+				{
+					_nameBlockBorder.BorderBrush = new SolidColorBrush(Colors.White);
+					_textBlockBorder.BorderBrush = new SolidColorBrush(Colors.White);
+				}
 			}
 			
 			_nameBlock.Text = thought ? "" : characterName;
@@ -991,7 +1262,7 @@ namespace VNet
 					_backgroundMusicPlayer.MediaEnded -= RepeatPlayback;
 					_backgroundMusicPlayer.MediaEnded += EndSong;
 				}
-				_backgroundMusicPlayer.Volume = volume * Settings.MusicVolumeMultiplier;
+				_backgroundMusicPlayer.Volume = volume * Settings.musicVolumeMultiplier;
 				_backgroundMusicPlayer.Play();
 				return;
 			}
@@ -1004,7 +1275,7 @@ namespace VNet
 			{
 				_soundEffectPlayer.MediaEnded -= RepeatPlayback;
 			}
-			_soundEffectPlayer.Volume = volume * Settings.SoundVolumeMultiplier;
+			_soundEffectPlayer.Volume = volume * Settings.soundVolumeMultiplier;
 			_soundEffectPlayer.Play();
 		}
 		private void RepeatPlayback(object sender, EventArgs e)
@@ -1064,7 +1335,7 @@ namespace VNet
 					Foreground = new SolidColorBrush(Colors.White)
 				};
 				button.Content = optionTextBlock;
-				button.AddHandler(Button.ClickEvent, new RoutedEventHandler(ChoiceButtonClick));
+				button.AddHandler(ButtonBase.ClickEvent, new RoutedEventHandler(ChoiceButtonClick));
 				ViewportContainer.Children.Add(button);
 				Canvas.SetLeft(button, Settings.windowWidth / 2 - button.Width / 2);
 				Canvas.SetTop(button, textTop);
