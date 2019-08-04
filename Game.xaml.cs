@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -20,6 +21,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Windows.Threading;
+using System.Xml.Serialization;
 using VNet.Assets;
 using Boolean = System.Boolean;
 using Label = System.Windows.Controls.Label;
@@ -36,12 +38,12 @@ namespace VNet
 		private LexicalAnalysis _lexical;
 		private GameEnvironment _environment;
 
-
 		// Game area elements
 		private TextBlock _textBlock;
 		private TextBlock _nameBlock;
 		private Border _textBlockBorder;
 		private Border _nameBlockBorder;
+		private Border _buttonBorder;
 
 		private Image _blackBackgroundConstant;
 		private Image _backgroundImage;
@@ -70,6 +72,9 @@ namespace VNet
 			Startup();
 		}
 
+		/*
+		 * Startup function, shows splash screen, loads assets and routes to main menu
+		 */
 		private void Startup()
 		{
 			// Create global objects needed at this point
@@ -122,7 +127,6 @@ namespace VNet
 			}
 			_backgroundImage.BeginAnimation(OpacityProperty, splashScreenFadeIn);
 		}
-
 		private void SplashScreenFadeInCompleted(object sender, EventArgs e)
 		{
 			DoubleAnimation splashScreenFadeOut = new DoubleAnimation
@@ -145,121 +149,7 @@ namespace VNet
 		}
 
 		/*
-		 * Loads main menu elements
-		 */
-		private void MainMenu(bool firstTime)
-		{
-			ClearViewport(true);
-
-			TextBlock gameNameTextBlock = new TextBlock
-			{
-				Name = "gameNameTextBlock",
-				Text = "VNet",
-				FontSize = 48,
-				FontWeight = FontWeights.Bold,
-				Foreground = new SolidColorBrush(Colors.AliceBlue)
-			};
-			ViewportContainer.Children.Add(gameNameTextBlock);
-			Canvas.SetLeft(gameNameTextBlock, 100);
-			Canvas.SetTop(gameNameTextBlock, 50);
-			Panel.SetZIndex(gameNameTextBlock, 2);
-
-			Button newGameButton = new Button
-			{
-				Name = "newGameButton",
-				Width = 320,
-				Height = 48,
-				Background = new SolidColorBrush(Color.FromArgb(192, 16, 16, 16))
-			};
-			TextBlock newGameTextBlock = new TextBlock
-			{
-				Name = "newGameTextBlock",
-				Text = "New Game",
-				FontSize = 20,
-				FontWeight = FontWeights.Bold,
-				Foreground = new SolidColorBrush(Colors.White)
-			};
-			newGameButton.Content = newGameTextBlock;
-			newGameButton.AddHandler(Button.ClickEvent, new RoutedEventHandler(NewGameButtonClick));
-			ViewportContainer.Children.Add(newGameButton);
-			Canvas.SetLeft(newGameButton, 100);
-			Canvas.SetTop(newGameButton, 200);
-			Panel.SetZIndex(newGameButton, 2);
-
-			Button loadGameButton = new Button
-			{
-				Name = "newGameButton",
-				Width = 320,
-				Height = 48,
-				Background = new SolidColorBrush(Color.FromArgb(192, 16, 16, 16))
-			};
-			TextBlock loadGameTextBlock = new TextBlock
-			{
-				Name = "loadGameTextBlock",
-				Text = "Load Game",
-				FontSize = 20,
-				FontWeight = FontWeights.Bold,
-				Foreground = new SolidColorBrush(Colors.White)
-			};
-			loadGameButton.Content = loadGameTextBlock;
-			loadGameButton.AddHandler(Button.ClickEvent, new RoutedEventHandler(LoadGameButtonClick));
-			ViewportContainer.Children.Add(loadGameButton);
-			Canvas.SetLeft(loadGameButton, 100);
-			Canvas.SetTop(loadGameButton, 300);
-			Panel.SetZIndex(loadGameButton, 2);
-
-			Button optionsButton = new Button
-			{
-				Name = "optionsButton",
-				Width = 320,
-				Height = 48,
-				Background = new SolidColorBrush(Color.FromArgb(192, 16, 16, 16))
-			};
-			TextBlock optionsTextBlock = new TextBlock
-			{
-				Name = "optionsTextBlock",
-				Text = "Options",
-				FontSize = 20,
-				FontWeight = FontWeights.Bold,
-				Foreground = new SolidColorBrush(Colors.White)
-			};
-			optionsButton.Content = optionsTextBlock;
-			optionsButton.AddHandler(Button.ClickEvent, new RoutedEventHandler(OptionsButtonClick));
-			ViewportContainer.Children.Add(optionsButton);
-			Canvas.SetLeft(optionsButton, 100);
-			Canvas.SetTop(optionsButton, 400);
-			Panel.SetZIndex(optionsButton, 2);
-
-			// Menu background image and music
-			if (firstTime)
-			{
-				ShowBackground("menu_background", 10);
-				PlaySound("menu_music", 1, true);
-			}
-		}
-
-		private void NewGameButtonClick(object sender, RoutedEventArgs e)
-		{
-			ClearViewport(false);
-			StopSound();
-			StopMusic();
-			NewGame();
-		}
-		
-		private void LoadGameButtonClick(object sender, RoutedEventArgs e)
-		{
-			ClearViewport(true);
-			ShowLoadGameScreen();
-		}
-		
-		private void OptionsButtonClick(object sender, RoutedEventArgs e)
-		{
-			ClearViewport(true);
-			ShowOptionsScreen();
-		}
-
-		/*
-		 * Clears the screen of all elements, if so specified keep background
+		 * Clears the screen of all elements, if so specified keeps background
 		 */
 		private void ClearViewport(bool keepBackground)
 		{
@@ -291,7 +181,21 @@ namespace VNet
 					}
 				}
 			}
-			this.UpdateLayout();
+			UpdateLayout();
+		}
+		
+		/*
+		 * Clears all UI elements off the screen with names contained in the temporaryUIElements list in the game environment.
+		 * Used for elements which appear over normal gameplay elements (save dialog, etc.)
+		 */
+		private void ClearTemporaryUiElements()
+		{
+			while (_environment.temporaryUIElementNames.Count > 0)
+			{
+				UIElement element = (UIElement)LogicalTreeHelper.FindLogicalNode(ViewportContainer, _environment.temporaryUIElementNames[0]);
+				ViewportContainer.Children.Remove(element);
+				_environment.temporaryUIElementNames.RemoveAt(0);
+			}
 		}
 
 		/*
@@ -376,220 +280,75 @@ namespace VNet
 			};
 			_textTimer.Tick += TextTimerOnTick;
 
+			// Save, menu and exit buttons
+			StackPanel buttonPanel = new StackPanel
+			{
+				Orientation = Orientation.Horizontal
+			};
+
+			Button saveButton = new Button
+			{
+				Name = "saveButton",
+				Width = 30,
+				Height = 30,
+				Margin = new Thickness(10, 10, 10, 10),
+				Background = new SolidColorBrush(Color.FromArgb(192, 192, 192, 192))
+			};
+			var saveIcon = new Image
+			{
+				Source = new BitmapImage(new Uri(_assets.ConvertToAbsolutePath(".\\assets\\icons\\saveIcon.png"), UriKind.Absolute))
+			};
+			saveButton.Content = saveIcon;
+			saveButton.Click += SaveButtonOnClick;
+			buttonPanel.Children.Add(saveButton);
+
+			Button menuButton = new Button
+			{
+				Name = "menuButton",
+				Width = 30,
+				Height = 30,
+				Margin = new Thickness(10, 10, 10, 10),
+				Background = new SolidColorBrush(Color.FromArgb(192, 192, 192, 192))
+			};
+			Image menuIcon = new Image
+			{
+				Source = new BitmapImage(new Uri(_assets.ConvertToAbsolutePath(".\\assets\\icons\\menuIcon.png"), UriKind.Absolute))
+			};
+			menuButton.Content = menuIcon;
+			menuButton.Click += MenuButtonOnClick;
+			buttonPanel.Children.Add(menuButton);
+
+			Button exitButton = new Button
+			{
+				Name = "exitButton",
+				Width = 30,
+				Height = 30,
+				Margin = new Thickness(10, 10, 10, 10),
+				Background = new SolidColorBrush(Color.FromArgb(192, 192, 192, 192))
+			};
+			Image exitIcon = new Image
+			{
+				Source = new BitmapImage(new Uri(_assets.ConvertToAbsolutePath(".\\assets\\icons\\exitIcon.png"), UriKind.Absolute))
+			};
+			exitButton.Content = exitIcon;
+			exitButton.Click += ExitButtonOnClick;
+			buttonPanel.Children.Add(exitButton);
+
+			_buttonBorder = new Border
+			{
+				BorderThickness = new Thickness(3, 3, 0, 0),
+				BorderBrush = new SolidColorBrush(Colors.White),
+				Background = new SolidColorBrush(Color.FromArgb(148, 0, 0, 0)),
+				Child = buttonPanel
+			};
+			ViewportContainer.Children.Add(_buttonBorder);
+			Canvas.SetLeft(_buttonBorder, 1111);
+			Canvas.SetTop(_buttonBorder, 547);
+			Panel.SetZIndex(_buttonBorder, 3);
+
 			Settings.inGame = true;
 			Settings.allowProgress = true;
 			TriggerNextCommand();
-		}
-
-		/*
-		 * Show screen containing all saved games found, allow user to load a game
-		 */
-		private void ShowLoadGameScreen()
-		{
-			
-		}
-
-		/*
-		 * Show screen containing various options like text speed, music/sound volume...
-		 */
-		private void ShowOptionsScreen()
-		{
-			TextBlock optionsTextBlock = new TextBlock
-			{
-				Name = "gameNameTextBlock",
-				Text = "Options",
-				FontSize = 48,
-				FontWeight = FontWeights.Bold,
-				Foreground = new SolidColorBrush(Colors.AliceBlue)
-			};
-			ViewportContainer.Children.Add(optionsTextBlock);
-			Canvas.SetLeft(optionsTextBlock, 100);
-			Canvas.SetTop(optionsTextBlock, 50);
-			Panel.SetZIndex(optionsTextBlock, 2);
-
-			// Text speed setting
-			TextBlock textSpeedTextBlock = new TextBlock
-			{
-				Name = "textSpeedTextBlock",
-				Text = "Text speed",
-				FontSize = 20,
-				FontWeight = FontWeights.Bold,
-				Foreground = new SolidColorBrush(Colors.White)
-			};
-			ViewportContainer.Children.Add(textSpeedTextBlock);
-			Canvas.SetLeft(textSpeedTextBlock, 100);
-			Canvas.SetTop(textSpeedTextBlock, 200);
-			Panel.SetZIndex(textSpeedTextBlock, 2);
-
-			Slider textSpeedSlider = new Slider
-			{
-				Width = 320,
-				TickPlacement = TickPlacement.BottomRight,
-				Minimum = 0.01,
-				Maximum = 0.2,
-				Value = 2.0 / Settings.textDisplaySpeedInMiliseconds,
-				TickFrequency = 0.01,
-				IsSnapToTickEnabled = true
-			};
-			textSpeedSlider.ValueChanged += (sender, args) =>
-			{
-				Settings.textDisplaySpeedInMiliseconds = (int)Math.Round(2.0 / textSpeedSlider.Value);
-			};
-			ViewportContainer.Children.Add(textSpeedSlider);
-			Canvas.SetLeft(textSpeedSlider, 400);
-			Canvas.SetTop(textSpeedSlider, 200);
-			Panel.SetZIndex(textSpeedSlider, 2);
-
-			// Music volume setting
-			TextBlock musicVolumeTextBlock = new TextBlock
-			{
-				Name = "musicVolumeTextBlock",
-				Text = "Music volume",
-				FontSize = 20,
-				FontWeight = FontWeights.Bold,
-				Foreground = new SolidColorBrush(Colors.White)
-			};
-			ViewportContainer.Children.Add(musicVolumeTextBlock);
-			Canvas.SetLeft(musicVolumeTextBlock, 100);
-			Canvas.SetTop(musicVolumeTextBlock, 250);
-			Panel.SetZIndex(musicVolumeTextBlock, 2);
-
-			Slider musicVolumeSlider = new Slider
-			{
-				Width = 320,
-				TickPlacement = TickPlacement.BottomRight,
-				Minimum = 0,
-				Maximum = 1,
-				Value = Settings.musicVolumeMultiplier,
-				TickFrequency = 0.05,
-				IsSnapToTickEnabled = true
-			};
-			musicVolumeSlider.ValueChanged += (sender, args) =>
-			{
-				Settings.musicVolumeMultiplier = musicVolumeSlider.Value;
-				_backgroundMusicPlayer.Volume = musicVolumeSlider.Value;
-			};
-			ViewportContainer.Children.Add(musicVolumeSlider);
-			Canvas.SetLeft(musicVolumeSlider, 400);
-			Canvas.SetTop(musicVolumeSlider, 250);
-			Panel.SetZIndex(musicVolumeSlider, 2);
-
-			// Sound volume setting
-			TextBlock soundVolumeTextBlock = new TextBlock
-			{
-				Name = "soundVolumeTextBlock",
-				Text = "Sound effects volume",
-				FontSize = 20,
-				FontWeight = FontWeights.Bold,
-				Foreground = new SolidColorBrush(Colors.White)
-			};
-			ViewportContainer.Children.Add(soundVolumeTextBlock);
-			Canvas.SetLeft(soundVolumeTextBlock, 100);
-			Canvas.SetTop(soundVolumeTextBlock, 300);
-			Panel.SetZIndex(soundVolumeTextBlock, 2);
-
-			Slider soundVolumeSlider = new Slider
-			{
-				Width = 320,
-				TickPlacement = TickPlacement.BottomRight,
-				Minimum = 0,
-				Maximum = 1,
-				Value = Settings.soundVolumeMultiplier,
-				TickFrequency = 0.05,
-				IsSnapToTickEnabled = true
-			};
-			soundVolumeSlider.ValueChanged += (sender, args) =>
-			{
-				Settings.soundVolumeMultiplier = soundVolumeSlider.Value;
-				_soundEffectPlayer.Volume = soundVolumeSlider.Value;
-			};
-			ViewportContainer.Children.Add(soundVolumeSlider);
-			Canvas.SetLeft(soundVolumeSlider, 400);
-			Canvas.SetTop(soundVolumeSlider, 300);
-			Panel.SetZIndex(soundVolumeSlider, 2);
-
-			Button backButton = new Button
-			{
-				Name = "backButton",
-				Width = 320,
-				Height = 48,
-				Background = new SolidColorBrush(Color.FromArgb(192, 16, 16, 16))
-			};
-			TextBlock backTextBlock = new TextBlock
-			{
-				Name = "backTextBlock",
-				Text = "Back",
-				FontSize = 20,
-				FontWeight = FontWeights.Bold,
-				Foreground = new SolidColorBrush(Colors.White)
-			};
-			backButton.Content = backTextBlock;
-			backButton.Click += (sender, args) =>
-			{
-				MainMenu(false);
-			};
-			ViewportContainer.Children.Add(backButton);
-			Canvas.SetLeft(backButton, 100);
-			Canvas.SetTop(backButton, 600);
-			Panel.SetZIndex(backButton, 2);
-
-			// Color character names setting
-			TextBlock colorNamesTextBlock = new TextBlock
-			{
-				Name = "colorNamesTextBlock",
-				Text = "Color character names",
-				FontSize = 20,
-				FontWeight = FontWeights.Bold,
-				Foreground = new SolidColorBrush(Colors.White)
-			};
-			ViewportContainer.Children.Add(colorNamesTextBlock);
-			Canvas.SetLeft(colorNamesTextBlock, 100);
-			Canvas.SetTop(colorNamesTextBlock, 350);
-			Panel.SetZIndex(colorNamesTextBlock, 2);
-
-			CheckBox colorNamesCheckBox = new CheckBox
-			{
-				Name = "colorNamesCheckBox",
-				IsChecked = Settings.colorCharacterNames
-			};
-			colorNamesCheckBox.Checked += (sender, args) => { Settings.colorCharacterNames = true; };
-			colorNamesCheckBox.Unchecked += (sender, args) => { Settings.colorCharacterNames = false; };
-			ViewportContainer.Children.Add(colorNamesCheckBox);
-			Canvas.SetLeft(colorNamesCheckBox, 400);
-			Canvas.SetTop(colorNamesCheckBox, 350);
-			Panel.SetZIndex(colorNamesCheckBox, 2);
-
-			// Color text box border setting
-			TextBlock colorBordersTextBlock = new TextBlock
-			{
-				Name = "colorBordersTextBlock",
-				Text = "Color text borders",
-				FontSize = 20,
-				FontWeight = FontWeights.Bold,
-				Foreground = new SolidColorBrush(Colors.White)
-			};
-			ViewportContainer.Children.Add(colorBordersTextBlock);
-			Canvas.SetLeft(colorBordersTextBlock, 100);
-			Canvas.SetTop(colorBordersTextBlock, 400);
-			Panel.SetZIndex(colorBordersTextBlock, 2);
-
-			CheckBox colorBordersCheckBox = new CheckBox
-			{
-				Name = "colorBordersCheckBox",
-				IsChecked = Settings.colorTextBorders
-			};
-			colorBordersCheckBox.Checked += (sender, args) => { Settings.colorTextBorders = true; };
-			colorBordersCheckBox.Unchecked += (sender, args) => { Settings.colorTextBorders = false; };
-			ViewportContainer.Children.Add(colorBordersCheckBox);
-			Canvas.SetLeft(colorBordersCheckBox, 400);
-			Canvas.SetTop(colorBordersCheckBox, 400);
-			Panel.SetZIndex(colorBordersCheckBox, 2);
-
-			// Background blur
-			BlurEffect blur = new BlurEffect { Radius = 0 };
-			DoubleAnimation blurAnimation = new DoubleAnimation(0.0, 5.0, new Duration(TimeSpan.FromMilliseconds(300)));
-			_backgroundImage.Effect = blur;
-			blur.BeginAnimation(BlurEffect.RadiusProperty, blurAnimation);
 		}
 
 		/*
@@ -598,403 +357,18 @@ namespace VNet
 		 */
 		private int ProcessScript()
 		{
-			int startOfGameLine = 0;
 			while(true)
 			{
 				string[] command = ProcessScriptLine();
-				if (command == null) return startOfGameLine;
+				if (command == null) return _currentScript.firstGameplayLine;
 				if (Settings.SetupKeywordList.Contains(command[0]))
 				{
 					ExecuteCommand(command);
 				}
-				else if (startOfGameLine == 0)
+				else if (_currentScript.firstGameplayLine == 0)
 				{
-					startOfGameLine = _currentScript.currentLine - 1;
+					_currentScript.firstGameplayLine = _currentScript.currentLine - 1;
 				}
-			}
-		}
-
-		/*
-		 * Function processes next line in current script and returns array of commands and arguments from that line
-		 */
-		private string[] ProcessScriptLine()
-		{
-			Token token = _lexical.GetNextToken();
-			if (token.Type == Type.Eof) return null;
-			if (token.Type == Type.LexError)
-			{
-				// TODO implement lex error recovery
-			}
-
-			bool insideQuotes = false;
-			string quotedString = "";
-
-			string[] lineComponents = new string[7];
-
-			while (true)
-			{
-				try
-				{
-					switch (token.Type)
-					{
-						// Sets the "command" for this line
-						case Type.Keyword:
-							if (lineComponents[0] != null)
-							{
-								if (insideQuotes)
-								{
-									quotedString += token.Lexem;
-								}
-								else if (lineComponents[0] == null)
-									lineComponents[0] = token.Lexem;
-								else if (lineComponents[1] == null)
-									lineComponents[1] = token.Lexem;
-								else if (lineComponents[2] == null)
-									lineComponents[2] = token.Lexem;
-								else if (lineComponents[3] == null)
-									lineComponents[3] = token.Lexem;
-								else if (lineComponents[4] == null)
-									lineComponents[4] = token.Lexem;
-								else if (lineComponents[5] == null)
-									lineComponents[5] = token.Lexem;
-								else if (lineComponents[6] == null)
-									lineComponents[6] = token.Lexem;
-								break;
-							}
-							lineComponents[0] = token.Lexem;
-							if (token.Lexem == "label")
-								lineComponents[1] = (token.Location.Line + 1).ToString();
-							break;
-						// If word is in quotes adds to string in quotes, otherwise puts the word in first empty spot of command
-						case Type.Word:
-							if (insideQuotes)
-							{
-								quotedString += token.Lexem;
-							}
-							else if (lineComponents[0] == null)
-								lineComponents[0] = token.Lexem;
-							else if (lineComponents[1] == null)
-								lineComponents[1] = token.Lexem;
-							else if (lineComponents[2] == null)
-								lineComponents[2] = token.Lexem;
-							else if (lineComponents[3] == null)
-								lineComponents[3] = token.Lexem;
-							else if (lineComponents[4] == null)
-								lineComponents[4] = token.Lexem;
-							else if (lineComponents[5] == null)
-								lineComponents[5] = token.Lexem;
-							else if (lineComponents[6] == null)
-								lineComponents[6] = token.Lexem;
-							break;
-
-						// If number is in quotes adds to string in quotes, otherwise puts the number in first empty spot of command
-						case Type.Number:
-							if (insideQuotes)
-							{
-								quotedString += token.Lexem;
-							}
-							else if (lineComponents[0] == null)
-								lineComponents[0] = token.Lexem;
-							else if (lineComponents[1] == null)
-								lineComponents[1] = token.Lexem;
-							else if (lineComponents[2] == null)
-								lineComponents[2] = token.Lexem;
-							else if (lineComponents[3] == null)
-								lineComponents[3] = token.Lexem;
-							else if (lineComponents[4] == null)
-								lineComponents[4] = token.Lexem;
-							else if (lineComponents[5] == null)
-								lineComponents[5] = token.Lexem;
-							else if (lineComponents[6] == null)
-								lineComponents[6] = token.Lexem;
-							break;
-
-						// If it is an opening quote starts adding following elements to quoted string, otherwise closes quote and adds whole string to first available variable slot
-						case Type.Quote:
-							insideQuotes = !insideQuotes;
-							if (!insideQuotes)
-							{
-								if (lineComponents[0] == null)
-									lineComponents[0] = quotedString;
-								else if (lineComponents[1] == null)
-									lineComponents[1] = quotedString;
-								else if (lineComponents[2] == null)
-									lineComponents[2] = quotedString;
-								else if (lineComponents[3] == null)
-									lineComponents[3] = quotedString;
-								else if (lineComponents[4] == null)
-									lineComponents[4] = quotedString;
-								else if (lineComponents[5] == null)
-									lineComponents[5] = quotedString;
-								else if (lineComponents[6] == null)
-									lineComponents[6] = quotedString;
-								quotedString = "";
-							}
-							break;
-
-						// If punctuation is in quotes adds the character to string in quotes, otherwise puts it into first available spot of command
-						case Type.Punctuation:
-							if (insideQuotes)
-							{
-								quotedString += token.Lexem;
-							}
-							else if (lineComponents[0] == null)
-								lineComponents[0] = token.Lexem;
-							else if (lineComponents[1] == null)
-								lineComponents[1] = token.Lexem;
-							else if (lineComponents[2] == null)
-								lineComponents[2] = token.Lexem;
-							else if (lineComponents[3] == null)
-								lineComponents[3] = token.Lexem;
-							else if (lineComponents[4] == null)
-								lineComponents[4] = token.Lexem;
-							else if (lineComponents[5] == null)
-								lineComponents[5] = token.Lexem;
-							else if (lineComponents[6] == null)
-								lineComponents[6] = token.Lexem;
-							break;
-
-						case Type.Whitespace:
-							if (insideQuotes)
-							{
-								quotedString += token.Lexem;
-							}
-							break;
-					}
-				}
-				catch (Exception e)
-				{
-					MessageBox.Show("Error in script on line " + e.Message);
-				}
-				token = _lexical.GetNextToken();
-				if (token.Type == Type.NewLine) break;
-				if (token.Type == Type.Eof) break;
-				if (token.Type == Type.LexError)
-				{
-					MessageBox.Show("Error in script on line " + token.Location.Line + ", column " +
-					                token.Location.Column);
-				}
-			}
-
-			return lineComponents;
-		}
-
-		/*
-		 * Function executes a single line in the current script after it has already been processed into an array of arguments
-		 */
-		private void ExecuteCommand(string[] command)
-		{
-			int intValue;
-			bool boolValue;
-			// Runs function corresponding to the command with the variables given
-			switch (command[0])
-			{
-				case "execute":
-
-					break;
-
-				case "label":
-					_assets.CreateLabel(command[2], command[1]);
-					break;
-
-				case "jump":
-					JumpToLabel(command[1]);
-					break;
-
-				case "character":
-					if (command[3] != null)
-						_assets.CreateCharacter(command[1], command[2], command[3]);
-					else if (command[2] != null)
-						_assets.CreateCharacter(command[1], command[2]);
-					else
-						_assets.CreateCharacter(command[1]);
-					break;
-
-				case "color":
-					_assets.SetCharacterColor(command[1], command[2], command[3], command[4]);
-					break;
-
-				case "image":
-					if (command[3] == null)
-					{
-						_assets.CreateBackground(command[1], command[2], true);
-					}
-					else
-					{
-						_assets.AddImageToCharacter(command[1], command[2], command[3]);
-					}
-					break;
-
-				case "sound":
-					_assets.CreateSound(command[1], command[2], false);
-					break;
-
-				case "music":
-					_assets.CreateSound(command[1], command[2], true);
-					break;
-
-				case "int":
-					if (int.TryParse(command[2], out intValue))
-					{
-						_assets.CreateVariable(command[1], intValue);
-					}
-					break;
-
-				case "bool":
-					if (bool.TryParse(command[2], out boolValue))
-					{
-						_assets.CreateVariable(command[1], boolValue);
-					}
-					break;
-
-				case "if":
-					Variable var = _assets.variables.Find(i => i.name == command[1]);
-					if (var == null) break;
-					switch (var)
-					{
-						case Assets.Boolean boolVal:
-							if (bool.TryParse(command[3], out boolValue))
-							{
-								if (boolValue == boolVal.value)
-								{
-									JumpToLabel(command[4]);
-								}
-							}
-							break;
-						case Assets.Integer intVal:
-							if (int.TryParse(command[3], out intValue))
-							{
-								switch (command[2])
-								{
-									case "<" when intVal.value < intValue:
-									case ">" when intVal.value > intValue:
-									case "=" when intVal.value == intValue:
-										JumpToLabel(command[4]);
-										break;
-								}
-							}
-							break;
-					}
-					break;
-
-				case "add":
-					if (int.TryParse(command[2], out intValue))
-					{
-						_assets.IntegerAdd(command[1], intValue);
-					}
-					break;
-
-				case "subtract":
-					if (int.TryParse(command[2], out intValue))
-					{
-						_assets.IntegerSubtract(command[1], intValue);
-					}
-					break;
-
-				case "set":
-					if (int.TryParse(command[2], out intValue))
-					{
-						_assets.IntegerSet(command[1], intValue);
-					}
-					else if (bool.TryParse(command[2], out boolValue))
-					{
-						_assets.BooleanSet(command[1], boolValue);
-					}
-					break;
-
-				case "show":
-					if (command[1] == "choice")
-					{
-						Settings.executeNext = false;
-						ShowChoice(command[2]);
-					}
-					if (command.Contains("pause")) Settings.executeNext = false;
-					// Only parameter is name, therefore show as background
-					if (command[2] == null)
-					{
-						ShowBackground(command[1], 500);
-					}
-					// More parameters, show as character
-					else if (command[2] != null)
-					{
-						if (command[3] != null)
-							ShowCharacter(command[1], command[2], 500, command[3]);
-						else
-							ShowCharacter(command[1], command[2], 500);
-					}
-					break;
-
-				case "clear":
-					if (command.Contains("pause"))
-					{
-						Settings.executeNext = false;
-					}
-
-					if (command[1] == "background")
-					{
-						ClearBackground();
-					}
-					else if (command[1] != null)
-					{
-						ClearCharacters(command[1]);
-					}
-					else
-					{
-						ClearCharacters();
-					}
-					break;
-
-				case "play":
-					if (command.Contains("pause"))
-					{
-						Settings.executeNext = false;
-					}
-					PlaySound(command[1], double.TryParse(command[2], NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var volume) ? volume : 1.0, command.Contains("r") || command.Contains("repeat"));
-					break;
-
-				case "stop":
-					if (command.Contains("pause"))
-					{
-						Settings.executeNext = false;
-					}
-					switch (command[1])
-					{
-						case "sound":
-							_soundEffectPlayer.Stop();
-							break;
-						case "music":
-							_backgroundMusicPlayer.Stop();
-							break;
-						default:
-							_soundEffectPlayer.Stop();
-							_backgroundMusicPlayer.Stop();
-							break;
-					}
-					break;
-
-				case "choice":
-					if (command[1] == "create")
-					{
-						_assets.CreateChoice(command[2]);
-					}
-					else
-					{
-						string choiceName = command[1];
-						if (command[2] == "set" && command[3] == "text")
-						{
-							_assets.EditChoiceText(choiceName, command[4]);
-						}
-						else if (command[2] == "add")
-						{
-							_assets.AddOptionToChoice(choiceName, command[3], command[4]);
-						}
-					}
-					break;
-
-				default:
-					Settings.executeNext = false;
-					ExecuteTextCommand(command);
-					break;
 			}
 		}
 
@@ -1176,11 +550,13 @@ namespace VNet
 				{
 					_nameBlockBorder.BorderBrush = new SolidColorBrush(selChar.color);
 					_textBlockBorder.BorderBrush = new SolidColorBrush(selChar.color);
+					_buttonBorder.BorderBrush = new SolidColorBrush(selChar.color);
 				}
 				else
 				{
 					_nameBlockBorder.BorderBrush = new SolidColorBrush(Colors.White);
 					_textBlockBorder.BorderBrush = new SolidColorBrush(Colors.White);
+					_buttonBorder.BorderBrush = new SolidColorBrush(Colors.White);
 				}
 			}
 			else
@@ -1203,11 +579,13 @@ namespace VNet
 				{
 					_nameBlockBorder.BorderBrush = solidBrush;
 					_textBlockBorder.BorderBrush = solidBrush;
+					_buttonBorder.BorderBrush = solidBrush;
 				}
 				else
 				{
 					_nameBlockBorder.BorderBrush = new SolidColorBrush(Colors.White);
 					_textBlockBorder.BorderBrush = new SolidColorBrush(Colors.White);
+					_buttonBorder.BorderBrush = new SolidColorBrush(Colors.White);
 				}
 			}
 			
@@ -1377,6 +755,21 @@ namespace VNet
 			_currentScript.currentLine = _assets.labels.Find(i => i.name == labelName).lineNumber;
 		}
 
+		/*
+		 * Function triggers writing of current game status into XML file
+		 */
+		private void SaveGame(int saveFileIndex)
+		{
+			if (saveFileIndex < 0 || saveFileIndex > 9)
+			{
+				return;
+			}
+			Savegame savegame = new Savegame(_environment, _assets.variables, _currentScript.currentLine);
+			string saveGameLocation = ".\\saves\\save_" + saveFileIndex.ToString("D2");
+			XmlSerializer serializer = new XmlSerializer(savegame.GetType());
+			StreamWriter streamWriter = new StreamWriter(saveGameLocation);
+			serializer.Serialize(streamWriter, savegame);
+		}
 		/*
 		 * Executes next line of script. Can execute multiple lines if they are non-stopping
 		 */

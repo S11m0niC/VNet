@@ -15,6 +15,7 @@ namespace VNet
 {
 	public class GameEnvironment
 	{
+		
 		public string currentBackgroundName;
 
 		public string fullText;
@@ -30,6 +31,8 @@ namespace VNet
 		public string currentSongName;
 
 		public List<string> onscreenButtonNames;
+		public List<string> temporaryUIElementNames;
+
 		public GameEnvironment()
 		{
 			currentBackgroundName = null;
@@ -37,6 +40,7 @@ namespace VNet
 			centerCharacterName = null;
 			rightCharacterName = null;
 			onscreenButtonNames = new List<string>();
+			temporaryUIElementNames = new List<string>();
 		}
 	}
 }

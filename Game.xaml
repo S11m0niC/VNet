@@ -9,6 +9,6 @@
         MouseLeftButtonUp="Game_OnMouseLeftButtonUp"
         Loaded="Game_OnLoaded">
     <Canvas Name="ViewportContainer">
-
+        
     </Canvas>
 </Window>

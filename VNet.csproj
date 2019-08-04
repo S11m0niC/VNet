@@ -66,9 +66,12 @@
     <Compile Include="Assets\Sound.cs" />
     <Compile Include="Assets\Variable.cs" />
     <Compile Include="GameEnvironment.cs" />
+    <Compile Include="IngameMenus.cs" />
     <Compile Include="LexicalAnalysis.cs" />
+    <Compile Include="MainMenu.cs" />
     <Compile Include="Savegame.cs" />
     <Compile Include="Script.cs" />
+    <Compile Include="ScriptInteraction.cs" />
     <Compile Include="Settings.cs" />
     <Page Include="Game.xaml">
       <Generator>MSBuild:Compile</Generator>

@@ -23,8 +23,8 @@ namespace VNet
 		/*
 		 * Global variables which change at runtime
 		 */
-		public static int windowWidth = 1280;
-		public static int windowHeight = 720;
+		public static double windowWidth = 1280;
+		public static double windowHeight = 720;
 		public static bool textDisplayedFully;
 		public static bool executeNext;
 		public static bool inGame;

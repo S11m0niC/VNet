@@ -17,6 +17,7 @@ namespace VNet
 
 		public int currentLine;
 		public int currentPositionInLine;
+		public int firstGameplayLine;
 
 		public Script() { }
 
@@ -34,6 +35,7 @@ namespace VNet
 
 			currentLine = 0;
 			currentPositionInLine = 0;
+			firstGameplayLine = 0;
 		}
 	}
 }
