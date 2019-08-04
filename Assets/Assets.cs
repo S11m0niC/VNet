@@ -134,8 +134,7 @@ namespace VNet.Assets
 		{
 			try
 			{
-				var image = new BitmapImage(new Uri(ConvertToAbsolutePath(imagePath), UriKind.Absolute));
-				var background = new Background(name, new WriteableBitmap(image));
+				var background = new Background(name, new Uri(ConvertToAbsolutePath(imagePath), UriKind.Absolute));
 				backgrounds.Add(background);
 				return true;
 			}

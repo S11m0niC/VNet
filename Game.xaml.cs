@@ -81,8 +81,8 @@ namespace VNet
 			// Create default black background
 			WriteableBitmap black = BitmapFactory.New(1280, 720);
 			black.Clear(Colors.Black);
-			Background default_black = new Background("default_black", black);
-			_assets.backgrounds.Add(default_black);
+			Background defaultBlack = new Background("default_black", black);
+			_assets.backgrounds.Add(defaultBlack);
 
 			_blackBackgroundConstant = new Image
 			{
@@ -118,7 +118,7 @@ namespace VNet
 			bool success = _assets.CreateBackground("splash_screen", ".\\assets\\splash.png", false);
 			if (success)
 			{
-				_backgroundImage.Source = _assets.backgrounds.Find(i => i.name == "splash_screen").image;
+				_backgroundImage.Source = new BitmapImage(_assets.backgrounds.Find(i => i.name == "splash_screen").imageUri);
 			}
 			_backgroundImage.BeginAnimation(OpacityProperty, splashScreenFadeIn);
 		}
@@ -1040,7 +1040,14 @@ namespace VNet
 			{
 				Settings.allowProgress = false;
 				_environment.currentBackgroundName = selectedBackground.name;
-				_backgroundImage.Source = selectedBackground.image;
+				if (selectedBackground.imageUri == null)
+				{
+					_backgroundImage.Source = selectedBackground.image;
+				}
+				else
+				{
+					_backgroundImage.Source = new BitmapImage(selectedBackground.imageUri);
+				}
 				_backgroundImage.BeginAnimation(OpacityProperty, _fadeIn);
 			}
 		}
@@ -1079,7 +1086,7 @@ namespace VNet
 					_environment.leftCharacterName = selectedCharacter.name;
 					xOffset = 0;
 					yOffset = 0;
-					_leftCharacter.Source = selectedMood.image;
+					_leftCharacter.Source = new BitmapImage(selectedMood.imageUri);
 					_leftCharacter.BeginAnimation(OpacityProperty, _fadeIn);
 					Canvas.SetLeft(_leftCharacter, xOffset);
 					Canvas.SetTop(_leftCharacter, yOffset);
@@ -1089,7 +1096,7 @@ namespace VNet
 					_environment.rightCharacterName = selectedCharacter.name;
 					xOffset = 760;
 					yOffset = 0;
-					_rightCharacter.Source = selectedMood.image;
+					_rightCharacter.Source = new BitmapImage(selectedMood.imageUri);
 					_rightCharacter.BeginAnimation(OpacityProperty, _fadeIn);
 					Canvas.SetLeft(_rightCharacter, xOffset);
 					Canvas.SetTop(_rightCharacter, yOffset);
@@ -1099,7 +1106,7 @@ namespace VNet
 					_environment.centerCharacterName = selectedCharacter.name;
 					xOffset = 380;
 					yOffset = 0;
-					_centerCharacter.Source = selectedMood.image;
+					_centerCharacter.Source = new BitmapImage(selectedMood.imageUri);
 					_centerCharacter.BeginAnimation(OpacityProperty, _fadeIn);
 					Canvas.SetLeft(_centerCharacter, xOffset);
 					Canvas.SetTop(_centerCharacter, yOffset);
@@ -1343,7 +1350,6 @@ namespace VNet
 				_environment.onscreenButtonNames.Add(button.Name);
 			}
 		}
-
 		/*
 		 * Event handler for clicking a button in choice, clears the choice, resumes gameplay and jumps to specified label
 		 */
@@ -1386,7 +1392,6 @@ namespace VNet
 				ExecuteCommand(command);
 			}
 		}
-
 		/*
 		 * Click event on window, triggers next line when ingame
 		 */
