@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Xml.Serialization;
 using VNet.Assets;
 
 namespace VNet
@@ -17,20 +18,27 @@ namespace VNet
 	{
 		
 		public string currentBackgroundName;
-
-		public string fullText;
-		public string displayedText;
-
-		public int FullTextLength => fullText.Length;
-		public int DisplayedTextLength => displayedText.Length;
-
 		public string leftCharacterName;
 		public string centerCharacterName;
 		public string rightCharacterName;
 
-		public string currentSongName;
+		public string fullText;
+		[XmlIgnore]
+		public string displayedText;
 
+		[XmlIgnore]
+		public int FullTextLength => fullText.Length;
+		[XmlIgnore]
+		public int DisplayedTextLength => displayedText.Length;
+
+		public string currentSongName;
+		public bool currentSongRepeating;
+		public string currentSoundName;
+		public bool currentSoundRepeating;
+
+		[XmlIgnore]
 		public List<string> onscreenButtonNames;
+		[XmlIgnore]
 		public List<string> temporaryUIElementNames;
 
 		public GameEnvironment()

@@ -639,26 +639,33 @@ namespace VNet
 				_backgroundMusicPlayer.Open(new Uri(snd.location));
 				if (repeat)
 				{
-					_backgroundMusicPlayer.MediaEnded -= EndSong;
+					_backgroundMusicPlayer.MediaEnded -= EndOfSong;
 					_backgroundMusicPlayer.MediaEnded += RepeatPlayback;
+					_environment.currentSongRepeating = true;
 				}
 				else
 				{
 					_backgroundMusicPlayer.MediaEnded -= RepeatPlayback;
-					_backgroundMusicPlayer.MediaEnded += EndSong;
+					_backgroundMusicPlayer.MediaEnded += EndOfSong;
+					_environment.currentSongRepeating = false;
 				}
 				_backgroundMusicPlayer.Volume = volume * Settings.musicVolumeMultiplier;
 				_backgroundMusicPlayer.Play();
 				return;
 			}
+			_environment.currentSoundName = snd.name;
 			_soundEffectPlayer.Open(new Uri(snd.location));
 			if (repeat)
 			{
+				_soundEffectPlayer.MediaEnded -= EndOfSound;
 				_soundEffectPlayer.MediaEnded += RepeatPlayback;
+				_environment.currentSoundRepeating = true;
 			}
 			else
 			{
+				_soundEffectPlayer.MediaEnded += EndOfSound;
 				_soundEffectPlayer.MediaEnded -= RepeatPlayback;
+				_environment.currentSoundRepeating = false;
 			}
 			_soundEffectPlayer.Volume = volume * Settings.soundVolumeMultiplier;
 			_soundEffectPlayer.Play();
@@ -669,9 +676,15 @@ namespace VNet
 			player.Position = TimeSpan.Zero;
 			player.Play();
 		}
-		private void EndSong(object sender, EventArgs e)
+		private void EndOfSong(object sender, EventArgs e)
 		{
 			_environment.currentSongName = null;
+			_environment.currentSongRepeating = false;
+		}
+		private void EndOfSound(object sender, EventArgs e)
+		{
+			_environment.currentSoundName = null;
+			_environment.currentSoundRepeating = false;
 		}
 
 		/*
@@ -680,6 +693,8 @@ namespace VNet
 		private void StopSound()
 		{
 			_soundEffectPlayer.Stop();
+			_environment.currentSoundName = null;
+			_environment.currentSoundRepeating = false;
 		}
 
 		/*
@@ -689,6 +704,7 @@ namespace VNet
 		{
 			_backgroundMusicPlayer.Stop();
 			_environment.currentSongName = null;
+			_environment.currentSongRepeating = false;
 		}
 
 		/*
@@ -758,7 +774,7 @@ namespace VNet
 		/*
 		 * Function triggers writing of current game status into XML file
 		 */
-		private void SaveGame(int saveFileIndex)
+		public void SaveGame(int saveFileIndex)
 		{
 			if (saveFileIndex < 0 || saveFileIndex > 9)
 			{
@@ -770,6 +786,7 @@ namespace VNet
 			StreamWriter streamWriter = new StreamWriter(saveGameLocation);
 			serializer.Serialize(streamWriter, savegame);
 		}
+
 		/*
 		 * Executes next line of script. Can execute multiple lines if they are non-stopping
 		 */

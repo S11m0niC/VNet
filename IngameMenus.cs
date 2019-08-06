@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -16,7 +17,179 @@ namespace VNet
 		 */
 		private void SaveButtonOnClick(object sender, RoutedEventArgs e)
 		{
-			throw new NotImplementedException();
+			Settings.inGame = false;
+
+			Border darkOverlay = new Border()
+			{
+				Name = "darkOverlay",
+				Width = Settings.windowWidth,
+				Height = Settings.windowHeight,
+				Background = new SolidColorBrush(Color.FromArgb(160, 0, 0, 0))
+			};
+			ViewportContainer.Children.Add(darkOverlay);
+			Panel.SetZIndex(darkOverlay, 6);
+			_environment.temporaryUIElementNames.Add(darkOverlay.Name);
+
+			TextBlock questionTextBlock = new TextBlock
+			{
+				Name = "questionTextBlock",
+				Text = "Select save slot:",
+				TextAlignment = TextAlignment.Center,
+				FontSize = 21,
+				FontWeight = FontWeights.Bold,
+				Foreground = new SolidColorBrush(Colors.White),
+				Margin = new Thickness(10, 10, 10, 20)
+			};
+			_environment.temporaryUIElementNames.Add(questionTextBlock.Name);
+
+			// Create grid for save slots
+			Grid slotGrid = new Grid
+			{
+				Name = "slotGrid",
+				Margin = new Thickness(10, 10, 10, 10),
+			};
+			slotGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+			slotGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+			slotGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+			slotGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+			slotGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+			slotGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+			_environment.temporaryUIElementNames.Add(slotGrid.Name);
+
+			// Create save slots
+			for (var i = 0; i < 3; i++)
+			{
+				for (var j = 1; j <= 3; j++)
+				{
+					// Gets the save file for this slot
+					Savegame save = Savegame.DeserializeSaveGame(3 * i + j);
+
+					// Creates UI content
+					Button slot = new Button()
+					{
+						Name = "save_0" + (3 * i + j),
+						Margin = new Thickness(10, 10, 10, 10),
+						Width = 300,
+						Height = 100
+					};
+					slot.Click += SlotOnClick;
+					slotGrid.Children.Add(slot);
+					Grid.SetColumn(slot, j - 1);
+					Grid.SetRow(slot, i);
+					_environment.temporaryUIElementNames.Add(slot.Name);
+
+					if (save == null)
+					{
+						TextBlock emptySlotText = new TextBlock
+						{
+							Name = "emptySlotText",
+							Text = "* Empty slot *",
+							FontSize = 21,
+							FontWeight = FontWeights.Bold
+						};
+						slot.Content = emptySlotText;
+						_environment.temporaryUIElementNames.Add(emptySlotText.Name);
+					}
+					else
+					{
+						TextBlock slotText = new TextBlock
+						{
+							Name = "slotText",
+							Text = save.currentEnvironment.fullText,
+							FontSize = 16
+						};
+						_environment.temporaryUIElementNames.Add(slotText.Name);
+
+						TextBlock slotDate = new TextBlock
+						{
+							Name = "slotDate",
+							Text = save.currentTime.ToString(CultureInfo.InvariantCulture),
+							FontSize = 16
+						};
+						_environment.temporaryUIElementNames.Add(slotDate.Name);
+
+						StackPanel slotRightPanel = new StackPanel
+						{
+							Name = "slotRightPanel",
+							Orientation = Orientation.Vertical
+						};
+						slotRightPanel.Children.Add(slotText);
+						slotRightPanel.Children.Add(slotDate);
+						_environment.temporaryUIElementNames.Add(slotRightPanel.Name);
+
+						Grid innerSlotGrid = new Grid
+						{
+							Name = "innerSlotGrid",
+						};
+						innerSlotGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+						innerSlotGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+						innerSlotGrid.Children.Add(slotRightPanel);
+						Grid.SetColumn(slotRightPanel, 1);
+						slot.Content = innerSlotGrid;
+						_environment.temporaryUIElementNames.Add(innerSlotGrid.Name);
+					}
+				}
+			}
+
+			TextBlock cancelTextBlock = new TextBlock
+			{
+				Name = "cancelTextBlock",
+				Text = "Cancel",
+				FontSize = 21,
+				FontWeight = FontWeights.Bold
+			};
+			_environment.temporaryUIElementNames.Add(cancelTextBlock.Name);
+
+			Button cancelButton = new Button
+			{
+				Name = "cancelButton",
+				IsCancel = true,
+				Content = cancelTextBlock,
+				Margin = new Thickness(5, 5, 5, 5),
+				Padding = new Thickness(5, 5, 5, 5),
+				Width = 240
+			};
+			cancelButton.Click += CancelButtonOnClick;
+			_environment.temporaryUIElementNames.Add(cancelButton.Name);
+
+			StackPanel verticalStackPanel = new StackPanel
+			{
+				Name = "verticalStackPanel",
+				Orientation = Orientation.Vertical,
+			};
+			verticalStackPanel.Children.Add(questionTextBlock);
+			verticalStackPanel.Children.Add(slotGrid);
+			verticalStackPanel.Children.Add(cancelButton);
+			_environment.temporaryUIElementNames.Add(verticalStackPanel.Name);
+
+			Border saveMenuBorder = new Border
+			{
+				Name = "saveMenuBorder",
+				BorderThickness = new Thickness(5, 5, 5, 5),
+				BorderBrush = new SolidColorBrush(Colors.White),
+				Background = new SolidColorBrush(Color.FromArgb(148, 0, 0, 0)),
+				Child = verticalStackPanel,
+				MinWidth = 960,
+				MinHeight = 540
+			};
+			ViewportContainer.Children.Add(saveMenuBorder);
+			Canvas.SetLeft(saveMenuBorder, 160);
+			Canvas.SetTop(saveMenuBorder, 90);
+			Panel.SetZIndex(saveMenuBorder, 7);
+
+			_environment.temporaryUIElementNames.Add(saveMenuBorder.Name);
+		}
+
+		// Event handler for clicking save slot
+		private void SlotOnClick(object sender, RoutedEventArgs e)
+		{
+			Button btn = (Button) sender;
+			if (Int32.TryParse(btn.Name.Substring(btn.Name.Length - 1, 1), out int saveIndex))
+			{
+				SaveGame(saveIndex);
+			}
+			ClearTemporaryUiElements();
+			Settings.inGame = true;
 		}
 
 		/*
@@ -31,7 +204,7 @@ namespace VNet
 				Name = "darkOverlay",
 				Width = Settings.windowWidth,
 				Height = Settings.windowHeight,
-				Background = new SolidColorBrush(Color.FromArgb(128, 0, 0, 0))
+				Background = new SolidColorBrush(Color.FromArgb(160, 0, 0, 0))
 			};
 			ViewportContainer.Children.Add(darkOverlay);
 			Panel.SetZIndex(darkOverlay, 6);
@@ -95,12 +268,8 @@ namespace VNet
 				Margin = new Thickness(10, 10, 10, 10),
 				MinWidth = 400
 			};
-			ColumnDefinition col1 = new ColumnDefinition();
-			col1.Width = new GridLength(50, GridUnitType.Star);
-			ColumnDefinition col2 = new ColumnDefinition();
-			col2.Width = new GridLength(50, GridUnitType.Star);
-			buttonGrid.ColumnDefinitions.Add(col1);
-			buttonGrid.ColumnDefinitions.Add(col2);
+			buttonGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+			buttonGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 			buttonGrid.Children.Add(exitButton);
 			buttonGrid.Children.Add(cancelButton);
 			Grid.SetColumn(exitButton, 0);
@@ -149,7 +318,7 @@ namespace VNet
 				Name = "darkOverlay",
 				Width = Settings.windowWidth,
 				Height = Settings.windowHeight,
-				Background = new SolidColorBrush(Color.FromArgb(128, 0, 0, 0))
+				Background = new SolidColorBrush(Color.FromArgb(160, 0, 0, 0))
 			};
 			ViewportContainer.Children.Add(darkOverlay);
 			Panel.SetZIndex(darkOverlay, 6);
@@ -213,12 +382,8 @@ namespace VNet
 				Margin = new Thickness(10, 10, 10, 10),
 				MinWidth = 400
 			};
-			ColumnDefinition col1 = new ColumnDefinition();
-			col1.Width = new GridLength(50, GridUnitType.Star);
-			ColumnDefinition col2 = new ColumnDefinition();
-			col2.Width = new GridLength(50, GridUnitType.Star);
-			buttonGrid.ColumnDefinitions.Add(col1);
-			buttonGrid.ColumnDefinitions.Add(col2);
+			buttonGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+			buttonGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 			buttonGrid.Children.Add(menuButton);
 			buttonGrid.Children.Add(cancelButton);
 			Grid.SetColumn(menuButton, 0);

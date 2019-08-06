@@ -12,12 +12,20 @@ namespace VNet
 		/*
 		 * Read-Only global variables and settings
 		 */
+		// Extension used for game scripts
 		public static readonly string ScriptExtension = "vnets";
+		// Location and name of starting script
 		public static readonly string StartScriptUri = "./game." + ScriptExtension;
-		
+		// Path and names of save files
+		public static string SaveFilePath(int saveFileIndex)
+		{
+			return ".\\saves\\save_" + saveFileIndex.ToString("D2");
+		} 
+		// The minimum splash screen time
 		public static readonly int SplashScreenMinimalTimeInMiliseconds = 3000;
-		
+		// List of keywords considered to be "game" words. These are executed during normal gameplay
 		public static readonly List<string> GameKeywordList = new List<string> {"jump", "show", "clear", "play", "stop", "with", "execute", "int", "bool", "if", "add", "subtract", "set" };
+		// List of keywords considered to be "setup" words. These are executed when launching the game
 		public static readonly List<string> SetupKeywordList = new List<string> {"label", "character", "image", "color", "sound", "music", "choice"};
 
 		/*

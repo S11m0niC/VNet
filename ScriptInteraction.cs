@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using VNet.Assets;
+using Boolean = System.Boolean;
 
 namespace VNet
 {
@@ -231,14 +232,14 @@ namespace VNet
 					break;
 
 				case "int":
-					if (int.TryParse(command[2], out intValue))
+					if (Int32.TryParse(command[2], out intValue))
 					{
 						_assets.CreateVariable(command[1], intValue);
 					}
 					break;
 
 				case "bool":
-					if (bool.TryParse(command[2], out boolValue))
+					if (Boolean.TryParse(command[2], out boolValue))
 					{
 						_assets.CreateVariable(command[1], boolValue);
 					}
@@ -250,7 +251,7 @@ namespace VNet
 					switch (var)
 					{
 						case Assets.Boolean boolVal:
-							if (bool.TryParse(command[3], out boolValue))
+							if (Boolean.TryParse(command[3], out boolValue))
 							{
 								if (boolValue == boolVal.value)
 								{
@@ -258,8 +259,8 @@ namespace VNet
 								}
 							}
 							break;
-						case Assets.Integer intVal:
-							if (int.TryParse(command[3], out intValue))
+						case Integer intVal:
+							if (Int32.TryParse(command[3], out intValue))
 							{
 								switch (command[2])
 								{
@@ -275,25 +276,25 @@ namespace VNet
 					break;
 
 				case "add":
-					if (int.TryParse(command[2], out intValue))
+					if (Int32.TryParse(command[2], out intValue))
 					{
 						_assets.IntegerAdd(command[1], intValue);
 					}
 					break;
 
 				case "subtract":
-					if (int.TryParse(command[2], out intValue))
+					if (Int32.TryParse(command[2], out intValue))
 					{
 						_assets.IntegerSubtract(command[1], intValue);
 					}
 					break;
 
 				case "set":
-					if (int.TryParse(command[2], out intValue))
+					if (Int32.TryParse(command[2], out intValue))
 					{
 						_assets.IntegerSet(command[1], intValue);
 					}
-					else if (bool.TryParse(command[2], out boolValue))
+					else if (Boolean.TryParse(command[2], out boolValue))
 					{
 						_assets.BooleanSet(command[1], boolValue);
 					}
@@ -346,7 +347,7 @@ namespace VNet
 					{
 						Settings.executeNext = false;
 					}
-					PlaySound(command[1], double.TryParse(command[2], NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var volume) ? volume : 1.0, command.Contains("r") || command.Contains("repeat"));
+					PlaySound(command[1], Double.TryParse(command[2], NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var volume) ? volume : 1.0, command.Contains("r") || command.Contains("repeat"));
 					break;
 
 				case "stop":
@@ -389,7 +390,7 @@ namespace VNet
 					break;
 
 				case "save":
-					SaveGame(0);
+					SaveGame(9);
 					break;
 
 				default:
