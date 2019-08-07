@@ -3,9 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Serialization;
 
 namespace VNet.Assets
 {
+	[XmlInclude(typeof(Boolean))]
+	[XmlInclude(typeof(Integer))]
 	public abstract class Variable : Asset
 	{}
 
@@ -18,6 +21,8 @@ namespace VNet.Assets
 			this.name = name;
 			this.value = value;
 		}
+
+		public Boolean() { }
 	}
 
 	public class Integer : Variable
@@ -29,5 +34,7 @@ namespace VNet.Assets
 			this.name = name;
 			this.value = value;
 		}
+
+		public Integer() { }
 	}
 }

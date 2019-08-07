@@ -187,21 +187,36 @@ namespace VNet
 		/*
 		 * Clears all UI elements off the screen with names contained in the temporaryUIElements list in the game environment.
 		 * Used for elements which appear over normal gameplay elements (save dialog, etc.)
+		 * Parameter layer: selects whether to clear UI elements in layer 1 or 2 of the UI
 		 */
-		private void ClearTemporaryUiElements()
+		private void ClearTemporaryUiElements(int layer)
 		{
-			while (_environment.temporaryUIElementNames.Count > 0)
+			if (layer == 1)
 			{
-				UIElement element = (UIElement)LogicalTreeHelper.FindLogicalNode(ViewportContainer, _environment.temporaryUIElementNames[0]);
-				ViewportContainer.Children.Remove(element);
-				_environment.temporaryUIElementNames.RemoveAt(0);
+				while (_environment.temporaryUIlayer1.Count > 0)
+				{
+					UIElement element = (UIElement)LogicalTreeHelper.FindLogicalNode(ViewportContainer, _environment.temporaryUIlayer1[0]);
+					ViewportContainer.Children.Remove(element);
+					_environment.temporaryUIlayer1.RemoveAt(0);
+				}
+				
+			}
+			else if (layer == 2)
+			{
+				while (_environment.temporaryUIlayer2.Count > 0)
+				{
+					UIElement element = (UIElement)LogicalTreeHelper.FindLogicalNode(ViewportContainer, _environment.temporaryUIlayer2[0]);
+					ViewportContainer.Children.Remove(element);
+					_environment.temporaryUIlayer2.RemoveAt(0);
+				}
 			}
 		}
 
 		/*
 		 * Create all onscreen elements for the game and start gameplay
+		 * parameter newGame: controls whether to start the game from new or just prepare environment for a loaded game
 		 */
-		private void NewGame()
+		private void NewGame(bool newGame)
 		{
 			_leftCharacter = new Image
 			{
@@ -346,9 +361,12 @@ namespace VNet
 			Canvas.SetTop(_buttonBorder, 547);
 			Panel.SetZIndex(_buttonBorder, 3);
 
-			Settings.inGame = true;
-			Settings.allowProgress = true;
-			TriggerNextCommand();
+			if (newGame)
+			{
+				Settings.inGame = true;
+				Settings.allowProgress = true;
+				TriggerNextCommand();
+			}
 		}
 
 		/*
@@ -363,7 +381,7 @@ namespace VNet
 				if (command == null) return _currentScript.firstGameplayLine;
 				if (Settings.SetupKeywordList.Contains(command[0]))
 				{
-					ExecuteCommand(command);
+					ExecuteCommand(command, false);
 				}
 				else if (_currentScript.firstGameplayLine == 0)
 				{
@@ -458,6 +476,7 @@ namespace VNet
 				if (position == "left")
 				{
 					_environment.leftCharacterName = selectedCharacter.name;
+					_environment.leftCharacterMood = selectedMood.name;
 					xOffset = 0;
 					yOffset = 0;
 					_leftCharacter.Source = new BitmapImage(selectedMood.imageUri);
@@ -468,6 +487,7 @@ namespace VNet
 				else if (position == "right")
 				{
 					_environment.rightCharacterName = selectedCharacter.name;
+					_environment.rightCharacterMood = selectedMood.name;
 					xOffset = 760;
 					yOffset = 0;
 					_rightCharacter.Source = new BitmapImage(selectedMood.imageUri);
@@ -478,6 +498,7 @@ namespace VNet
 				else
 				{
 					_environment.centerCharacterName = selectedCharacter.name;
+					_environment.centerCharacterMood = selectedMood.name;
 					xOffset = 380;
 					yOffset = 0;
 					_centerCharacter.Source = new BitmapImage(selectedMood.imageUri);
@@ -497,17 +518,20 @@ namespace VNet
 			{
 				_leftCharacter.Source = null;
 				_environment.leftCharacterName = null;
+				_environment.leftCharacterMood = null;
 
 			}
 			else if (position == "center" && _environment.centerCharacterName != null)
 			{
 				_centerCharacter.Source = null;
 				_environment.centerCharacterName = null;
+				_environment.centerCharacterMood = null;
 			}
 			else if (position == "right" && _environment.rightCharacterName != null)
 			{
 				_rightCharacter.Source = null;
 				_environment.rightCharacterName = null;
+				_environment.rightCharacterMood = null;
 			}
 			else
 			{
@@ -515,16 +539,19 @@ namespace VNet
 				{
 					_leftCharacter.Source = null;
 					_environment.leftCharacterName = null;
+					_environment.leftCharacterMood = null;
 				}
 				if (_environment.centerCharacterName != null)
 				{
 					_centerCharacter.Source = null;
 					_environment.centerCharacterName = null;
+					_environment.centerCharacterMood = null;
 				}
 				if (_environment.rightCharacterName != null)
 				{
 					_rightCharacter.Source = null;
 					_environment.rightCharacterName = null;
+					_environment.rightCharacterMood = null;
 				}
 			}
 		}
@@ -589,9 +616,14 @@ namespace VNet
 				}
 			}
 			
+			_environment.nameOfCharacterTalking = thought ? "" : characterName;
 			_nameBlock.Text = thought ? "" : characterName;
 			if (thought)
 				_environment.fullText = content;
+			else if (content.Substring(0, 1) == "\"" && content.Substring(content.Length - 1, 1) == "\"")
+			{
+				_environment.fullText = content;
+			}
 			else
 				_environment.fullText = "\"" + content + "\"";
 
@@ -650,6 +682,7 @@ namespace VNet
 					_environment.currentSongRepeating = false;
 				}
 				_backgroundMusicPlayer.Volume = volume * Settings.musicVolumeMultiplier;
+				_environment.currentSongVolume = volume;
 				_backgroundMusicPlayer.Play();
 				return;
 			}
@@ -668,6 +701,7 @@ namespace VNet
 				_environment.currentSoundRepeating = false;
 			}
 			_soundEffectPlayer.Volume = volume * Settings.soundVolumeMultiplier;
+			_environment.currentSoundVolume = volume;
 			_soundEffectPlayer.Play();
 		}
 		private void RepeatPlayback(object sender, EventArgs e)
@@ -690,21 +724,27 @@ namespace VNet
 		/*
 		 * Stops current sound playback
 		 */
-		private void StopSound()
+		private void StopSound(bool clearFromEnvironment)
 		{
 			_soundEffectPlayer.Stop();
-			_environment.currentSoundName = null;
-			_environment.currentSoundRepeating = false;
+			if (clearFromEnvironment)
+			{
+				_environment.currentSoundName = null;
+				_environment.currentSoundRepeating = false;
+			}
 		}
 
 		/*
 		 * Stops current music playback
 		 */
-		private void StopMusic()
+		private void StopMusic(bool clearFromEnvironment)
 		{
 			_backgroundMusicPlayer.Stop();
-			_environment.currentSongName = null;
-			_environment.currentSongRepeating = false;
+			if (clearFromEnvironment)
+			{
+				_environment.currentSongName = null;
+				_environment.currentSongRepeating = false;
+			}
 		}
 
 		/*
@@ -741,7 +781,7 @@ namespace VNet
 				Canvas.SetLeft(button, Settings.windowWidth / 2 - button.Width / 2);
 				Canvas.SetTop(button, textTop);
 				Panel.SetZIndex(button, 4);
-				_environment.onscreenButtonNames.Add(button.Name);
+				_environment.choiceButtonNames.Add(button.Name);
 			}
 		}
 		/*
@@ -751,11 +791,11 @@ namespace VNet
 		{
 			JumpToLabel(((Button)sender).Name);
 			
-			while (_environment.onscreenButtonNames.Count > 0)
+			while (_environment.choiceButtonNames.Count > 0)
 			{
-				Button btn = (Button)LogicalTreeHelper.FindLogicalNode(ViewportContainer, _environment.onscreenButtonNames[0]);
+				Button btn = (Button)LogicalTreeHelper.FindLogicalNode(ViewportContainer, _environment.choiceButtonNames[0]);
 				ViewportContainer.Children.Remove(btn);
-				_environment.onscreenButtonNames.RemoveAt(0);
+				_environment.choiceButtonNames.RemoveAt(0);
 			}
 
 			Settings.allowProgress = true;
@@ -772,22 +812,6 @@ namespace VNet
 		}
 
 		/*
-		 * Function triggers writing of current game status into XML file
-		 */
-		public void SaveGame(int saveFileIndex)
-		{
-			if (saveFileIndex < 0 || saveFileIndex > 9)
-			{
-				return;
-			}
-			Savegame savegame = new Savegame(_environment, _assets.variables, _currentScript.currentLine);
-			string saveGameLocation = ".\\saves\\save_" + saveFileIndex.ToString("D2");
-			XmlSerializer serializer = new XmlSerializer(savegame.GetType());
-			StreamWriter streamWriter = new StreamWriter(saveGameLocation);
-			serializer.Serialize(streamWriter, savegame);
-		}
-
-		/*
 		 * Executes next line of script. Can execute multiple lines if they are non-stopping
 		 */
 		private void TriggerNextCommand()
@@ -798,8 +822,17 @@ namespace VNet
 				string[] command = ProcessScriptLine();
 				if (command == null) return;
 				if (Settings.SetupKeywordList.Contains(command[0]) || command[0] == null) continue;
+
+				if (Settings.afterLoad)
+				{
+					ExecuteCommand(command, true);
+					Settings.afterLoad = false;
+				}
+				else
+				{
+					ExecuteCommand(command, false);
+				}
 				
-				ExecuteCommand(command);
 			}
 		}
 		/*

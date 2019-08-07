@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -10,7 +11,9 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Effects;
+using System.Windows.Media.Imaging;
 using System.Xml.Serialization;
+using VNet.Assets;
 
 namespace VNet
 {
@@ -26,7 +29,7 @@ namespace VNet
 			TextBlock gameNameTextBlock = new TextBlock
 			{
 				Name = "gameNameTextBlock",
-				Text = "VNet",
+				Text = Settings.gameName,
 				FontSize = 48,
 				FontWeight = FontWeights.Bold,
 				Foreground = new SolidColorBrush(Colors.AliceBlue)
@@ -35,6 +38,35 @@ namespace VNet
 			Canvas.SetLeft(gameNameTextBlock, 100);
 			Canvas.SetTop(gameNameTextBlock, 50);
 			Panel.SetZIndex(gameNameTextBlock, 2);
+
+			Savegame lastSave = FindLastSave();
+			if (lastSave != null)
+			{
+				Button continueButton = new Button
+				{
+					Name = "continueButton",
+					Width = 320,
+					Height = 48,
+					Background = new SolidColorBrush(Color.FromArgb(192, 16, 16, 16))
+				};
+				TextBlock continueTextBlock = new TextBlock
+				{
+					Name = "continueTextBlock",
+					Text = "Continue",
+					FontSize = 20,
+					FontWeight = FontWeights.Bold,
+					Foreground = new SolidColorBrush(Colors.White)
+				};
+				continueButton.Content = continueTextBlock;
+				continueButton.Click += (sender, args) =>
+				{
+					LoadGame(lastSave);
+				};
+				ViewportContainer.Children.Add(continueButton);
+				Canvas.SetLeft(continueButton, 100);
+				Canvas.SetTop(continueButton, 200);
+				Panel.SetZIndex(continueButton, 2);
+			}
 
 			Button newGameButton = new Button
 			{
@@ -55,7 +87,7 @@ namespace VNet
 			newGameButton.AddHandler(ButtonBase.ClickEvent, new RoutedEventHandler(NewGameButtonClick));
 			ViewportContainer.Children.Add(newGameButton);
 			Canvas.SetLeft(newGameButton, 100);
-			Canvas.SetTop(newGameButton, 200);
+			Canvas.SetTop(newGameButton, 280);
 			Panel.SetZIndex(newGameButton, 2);
 
 			Button loadGameButton = new Button
@@ -77,7 +109,7 @@ namespace VNet
 			loadGameButton.AddHandler(ButtonBase.ClickEvent, new RoutedEventHandler(LoadGameButtonClick));
 			ViewportContainer.Children.Add(loadGameButton);
 			Canvas.SetLeft(loadGameButton, 100);
-			Canvas.SetTop(loadGameButton, 300);
+			Canvas.SetTop(loadGameButton, 360);
 			Panel.SetZIndex(loadGameButton, 2);
 
 			Button optionsButton = new Button
@@ -99,7 +131,7 @@ namespace VNet
 			optionsButton.AddHandler(ButtonBase.ClickEvent, new RoutedEventHandler(OptionsButtonClick));
 			ViewportContainer.Children.Add(optionsButton);
 			Canvas.SetLeft(optionsButton, 100);
-			Canvas.SetTop(optionsButton, 400);
+			Canvas.SetTop(optionsButton, 440);
 			Panel.SetZIndex(optionsButton, 2);
 
 			Button exitButton = new Button
@@ -121,7 +153,7 @@ namespace VNet
 			exitButton.AddHandler(ButtonBase.ClickEvent, new RoutedEventHandler(ExitButtonClick));
 			ViewportContainer.Children.Add(exitButton);
 			Canvas.SetLeft(exitButton, 100);
-			Canvas.SetTop(exitButton, 500);
+			Canvas.SetTop(exitButton, 520);
 			Panel.SetZIndex(exitButton, 2);
 
 			// Menu background image and music
@@ -136,18 +168,41 @@ namespace VNet
 		}
 
 		/*
+		 * Returns the save game with the latest date
+		 */
+		private Savegame FindLastSave()
+		{
+			Savegame mostRecentSave = new Savegame();
+			DateTime mostRecentDate = DateTime.MinValue;
+			bool saveFound = false;
+			for (int i = 0; i < 10; i++)
+			{
+				Savegame save = FindSaveGame(i);
+				if (save != null && save.currentTime > mostRecentDate)
+				{
+					mostRecentSave = save;
+					saveFound = true;
+				}
+			}
+
+			return saveFound ? mostRecentSave : null;
+		}
+
+		/*
 		 * Main menu button event handlers
 		 */
 		private void NewGameButtonClick(object sender, RoutedEventArgs e)
 		{
 			ClearViewport(false);
-			StopSound();
-			StopMusic();
-			NewGame();
+			StopSound(true);
+			StopMusic(true);
+			NewGame(true);
 		}
 		private void LoadGameButtonClick(object sender, RoutedEventArgs e)
 		{
 			ClearViewport(true);
+			Settings.deleteGamesOnLoadScreen = false;
+			Settings.deletedSaveSlot = -1;
 			ShowLoadGameScreen();
 		}
 		private void OptionsButtonClick(object sender, RoutedEventArgs e)
@@ -165,7 +220,318 @@ namespace VNet
 		 */
 		private void ShowLoadGameScreen()
 		{
-			// TODO
+			TextBlock questionTextBlock = new TextBlock
+			{
+				Name = "questionTextBlock",
+				Text = Settings.deleteGamesOnLoadScreen ? "Select slot to delete:" : "Select slot to load:",
+				TextAlignment = TextAlignment.Center,
+				FontSize = 21,
+				FontWeight = FontWeights.Bold,
+				Foreground = new SolidColorBrush(Colors.White),
+				Margin = new Thickness(10, 10, 10, 20)
+			};
+
+			// Create grid for save slots
+			Grid slotGrid = new Grid
+			{
+				Name = "slotGrid",
+				Margin = new Thickness(10, 10, 10, 10),
+			};
+			slotGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+			slotGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+			slotGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+			slotGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+			slotGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+			slotGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+
+			// Create save slots
+			for (var i = 0; i < 3; i++)
+			{
+				for (var j = 1; j <= 3; j++)
+				{
+					// Gets the save file for this slot
+					Savegame save = Savegame.DeserializeSaveGame(3 * i + j);
+
+					// Creates UI content
+					Button slot = new Button()
+					{
+						Name = "save_0" + (3 * i + j),
+						Margin = new Thickness(10, 10, 10, 10),
+						Width = 300,
+						Height = 100
+					};
+					slotGrid.Children.Add(slot);
+					Grid.SetColumn(slot, j - 1);
+					Grid.SetRow(slot, i);
+
+					if (save == null)
+					{
+						TextBlock emptySlotText = new TextBlock
+						{
+							Name = "emptySlotText",
+							Text = "* Empty slot *",
+							FontSize = 21,
+							FontWeight = FontWeights.Bold
+						};
+						slot.Content = emptySlotText;
+					}
+					else if (Settings.deletedSaveSlot == (3 * i + j))
+					{
+						TextBlock emptySlotText = new TextBlock
+						{
+							Name = "emptySlotText",
+							Text = "* Empty slot *",
+							FontSize = 21,
+							FontWeight = FontWeights.Bold
+						};
+						slot.Content = emptySlotText;
+						Settings.deletedSaveSlot = -1;
+					}
+					else
+					{
+						slot.Click += LoadSlotOnClick;
+
+						Background selBackground =
+							_assets.backgrounds.Find(bg => bg.name == save.currentEnvironment.currentBackgroundName);
+						Image slotImage = new Image
+						{
+							Source = new BitmapImage(selBackground.imageUri)
+						};
+
+						TextBlock slotText = new TextBlock
+						{
+							Name = "slotText",
+							Text = save.currentEnvironment.fullText,
+							TextWrapping = TextWrapping.Wrap,
+							TextTrimming = TextTrimming.CharacterEllipsis,
+							MaxHeight = 70,
+							FontSize = 14,
+							FontWeight = FontWeights.DemiBold
+						};
+
+						TextBlock slotDate = new TextBlock
+						{
+							Name = "slotDate",
+							Text = save.currentTime.ToString(CultureInfo.CurrentCulture),
+							TextTrimming = TextTrimming.CharacterEllipsis,
+							FontSize = 14,
+							Margin = new Thickness(0, 10, 0, 0)
+						};
+
+						Grid innerRightSlotGrid = new Grid
+						{
+							Name = "innerRightSlotGrid",
+							Margin = new Thickness(5, 0, 0, 0)
+						};
+						innerRightSlotGrid.RowDefinitions.Add(new RowDefinition() { Height = new GridLength(5, GridUnitType.Star) });
+						innerRightSlotGrid.RowDefinitions.Add(new RowDefinition() { Height = new GridLength(2, GridUnitType.Star) });
+						innerRightSlotGrid.Children.Add(slotText);
+						innerRightSlotGrid.Children.Add(slotDate);
+						Grid.SetRow(slotText, 0);
+						Grid.SetRow(slotDate, 1);
+
+						Grid innerSlotGrid = new Grid
+						{
+							Name = "innerSlotGrid",
+						};
+						innerSlotGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+						innerSlotGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+						innerSlotGrid.Children.Add(innerRightSlotGrid);
+						innerSlotGrid.Children.Add(slotImage);
+						Grid.SetColumn(slotImage, 0);
+						Grid.SetColumn(innerRightSlotGrid, 1);
+						slot.Content = innerSlotGrid;
+					}
+				}
+			}
+
+			TextBlock changeModeTextBlock = new TextBlock
+			{
+				Name = "changeModeTextBlock",
+				FontSize = 21,
+				FontWeight = FontWeights.Bold,
+				Text = Settings.deleteGamesOnLoadScreen ? "Load" : "Delete"
+			};
+
+			Button changeModeButton = new Button
+			{
+				Name = "cancelButton",
+				IsCancel = true,
+				Content = changeModeTextBlock,
+				Margin = new Thickness(5, 5, 5, 5),
+				Padding = new Thickness(5, 5, 5, 5),
+				Width = 240
+			};
+			changeModeButton.Click += (sender, args) =>
+			{
+				Settings.deleteGamesOnLoadScreen = !Settings.deleteGamesOnLoadScreen;
+				ClearViewport(true);
+				ShowLoadGameScreen();
+			};
+
+			TextBlock cancelTextBlock = new TextBlock
+			{
+				Name = "cancelTextBlock",
+				Text = "Cancel",
+				FontSize = 21,
+				FontWeight = FontWeights.Bold
+			};
+
+			Button cancelButton = new Button
+			{
+				Name = "cancelButton",
+				IsCancel = true,
+				Content = cancelTextBlock,
+				Margin = new Thickness(5, 5, 5, 5),
+				Padding = new Thickness(5, 5, 5, 5),
+				Width = 240
+			};
+			cancelButton.Click += (sender, args) =>
+			{
+				MainMenu(false);
+			};
+
+			Grid buttonGrid = new Grid
+			{
+				Name = "buttonGrid",
+				Margin = new Thickness(10, 10, 10, 10),
+			};
+			buttonGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+			buttonGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+			buttonGrid.Children.Add(changeModeButton);
+			buttonGrid.Children.Add(cancelButton);
+			Grid.SetColumn(changeModeButton, 0);
+			Grid.SetColumn(cancelButton, 1);
+
+			StackPanel verticalStackPanel = new StackPanel
+			{
+				Name = "verticalStackPanel",
+				Orientation = Orientation.Vertical,
+			};
+			verticalStackPanel.Children.Add(questionTextBlock);
+			verticalStackPanel.Children.Add(slotGrid);
+			verticalStackPanel.Children.Add(buttonGrid);
+
+			Border saveMenuBorder = new Border
+			{
+				Name = "saveMenuBorder",
+				BorderThickness = new Thickness(5, 5, 5, 5),
+				BorderBrush = new SolidColorBrush(Colors.White),
+				Background = new SolidColorBrush(Color.FromArgb(148, 0, 0, 0)),
+				Child = verticalStackPanel,
+				MinWidth = 960,
+				MinHeight = 540
+			};
+			ViewportContainer.Children.Add(saveMenuBorder);
+			Canvas.SetLeft(saveMenuBorder, 160);
+			Canvas.SetTop(saveMenuBorder, 90);
+			Panel.SetZIndex(saveMenuBorder, 7);
+
+			// Background blur
+			BlurEffect blur = new BlurEffect { Radius = 0 };
+			DoubleAnimation blurAnimation = new DoubleAnimation(0.0, 5.0, new Duration(TimeSpan.FromMilliseconds(300)));
+			_backgroundImage.Effect = blur;
+			blur.BeginAnimation(BlurEffect.RadiusProperty, blurAnimation);
+		}
+
+		/*
+		 * Triggers loading or deleting of chosen slot on click
+		 */
+		private void LoadSlotOnClick(object sender, RoutedEventArgs e)
+		{
+			if (Settings.deleteGamesOnLoadScreen)
+			{
+				Button btn = (Button)sender;
+				if (Int32.TryParse(btn.Name.Substring(btn.Name.Length - 1, 1), out int saveIndex))
+				{
+					DeleteSavedGame(saveIndex);
+					Settings.deletedSaveSlot = saveIndex;
+					ClearViewport(true);
+					ShowLoadGameScreen();
+				}
+			}
+			else
+			{
+				Button btn = (Button)sender;
+				if (Int32.TryParse(btn.Name.Substring(btn.Name.Length - 1, 1), out int saveIndex))
+				{
+					LoadGame(FindSaveGame(saveIndex));
+				}
+			}
+		}
+
+		/*
+		 * Deletes save game with chosen index
+		 */
+		private void DeleteSavedGame(int saveIndex)
+		{
+			File.Delete(Settings.SaveFilePath(saveIndex));
+		}
+
+		/*
+		 * Loads and starts game based on the provided save index (0-9)
+		 */
+		private Savegame FindSaveGame(int saveGameIndex)
+		{
+			Savegame save = Savegame.DeserializeSaveGame(saveGameIndex);
+			return save;
+		}
+
+		private void LoadGame(Savegame save)
+		{
+			// Set required gameplay elements
+			_currentScript.currentLine = save.currentScriptLine;
+			_currentScript.currentPositionInLine = 0;
+			_environment = save.currentEnvironment;
+			_assets.variables = save.currentVariables;
+
+			// Start game
+			StopSound(false);
+			StopMusic(false);
+			ClearViewport(false);
+			NewGame(false);
+
+			// Load environment from save
+			LoadSurroundingsFromEnvironment(_environment);
+
+			Settings.inGame = true;
+			Settings.allowProgress = true;
+			Settings.afterLoad = true;
+		}
+
+		/*
+		 * Loads game surroundings from given environment object.
+		 */
+		private void LoadSurroundingsFromEnvironment(GameEnvironment environment)
+		{
+			if (environment.currentBackgroundName != null)
+			{
+				ShowBackground(environment.currentBackgroundName, 100);
+			}
+			if (environment.leftCharacterName != null)
+			{
+				ShowCharacter(environment.leftCharacterName, environment.leftCharacterMood, 100, "left");
+			}
+			if (environment.centerCharacterName != null)
+			{
+				ShowCharacter(environment.centerCharacterName, environment.centerCharacterMood, 100, "center");
+			}
+			if (environment.rightCharacterName != null)
+			{
+				ShowCharacter(environment.rightCharacterName, environment.rightCharacterMood, 100, "right");
+			}
+			if (environment.nameOfCharacterTalking != null)
+			{
+				ShowText(environment.nameOfCharacterTalking, environment.fullText, environment.nameOfCharacterTalking == "");
+			}
+			if (environment.currentSongName != null)
+			{
+				PlaySound(environment.currentSongName, environment.currentSongVolume, environment.currentSongRepeating);
+			}
+			if (environment.currentSoundName != null)
+			{
+				PlaySound(environment.currentSoundName, environment.currentSoundVolume, environment.currentSoundRepeating);
+			}
 		}
 
 		/*

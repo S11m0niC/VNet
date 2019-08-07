@@ -179,8 +179,9 @@ namespace VNet
 
 		/*
 		 * Function executes a single line in the current script after it has already been processed into an array of arguments
+		 * Parameter afterSave controls whether the line is the first line after loading a saved game, in which case it does not execute text lines (as the text is contained in the save)
 		 */
-		private void ExecuteCommand(string[] command)
+		private void ExecuteCommand(string[] command, bool afterSave)
 		{
 			int intValue;
 			bool boolValue;
@@ -195,10 +196,6 @@ namespace VNet
 					_assets.CreateLabel(command[2], command[1]);
 					break;
 
-				case "jump":
-					JumpToLabel(command[1]);
-					break;
-
 				case "character":
 					if (command[3] != null)
 						_assets.CreateCharacter(command[1], command[2], command[3]);
@@ -206,10 +203,6 @@ namespace VNet
 						_assets.CreateCharacter(command[1], command[2]);
 					else
 						_assets.CreateCharacter(command[1]);
-					break;
-
-				case "color":
-					_assets.SetCharacterColor(command[1], command[2], command[3], command[4]);
 					break;
 
 				case "image":
@@ -223,12 +216,43 @@ namespace VNet
 					}
 					break;
 
+				case "color":
+					_assets.SetCharacterColor(command[1], command[2], command[3], command[4]);
+					break;
+
 				case "sound":
 					_assets.CreateSound(command[1], command[2], false);
 					break;
 
 				case "music":
 					_assets.CreateSound(command[1], command[2], true);
+					break;
+
+				case "choice":
+					if (command[1] == "create")
+					{
+						_assets.CreateChoice(command[2]);
+					}
+					else
+					{
+						string choiceName = command[1];
+						if (command[2] == "set" && command[3] == "text")
+						{
+							_assets.EditChoiceText(choiceName, command[4]);
+						}
+						else if (command[2] == "add")
+						{
+							_assets.AddOptionToChoice(choiceName, command[3], command[4]);
+						}
+					}
+					break;
+
+				case "name":
+					Settings.gameName = command[1];
+					break;
+
+				case "jump":
+					JumpToLabel(command[1]);
 					break;
 
 				case "int":
@@ -358,44 +382,28 @@ namespace VNet
 					switch (command[1])
 					{
 						case "sound":
-							_soundEffectPlayer.Stop();
+							StopSound(true);
 							break;
 						case "music":
-							_backgroundMusicPlayer.Stop();
+							StopMusic(true);
 							break;
 						default:
-							_soundEffectPlayer.Stop();
-							_backgroundMusicPlayer.Stop();
+							StopSound(true);
+							StopMusic(true);
 							break;
-					}
-					break;
-
-				case "choice":
-					if (command[1] == "create")
-					{
-						_assets.CreateChoice(command[2]);
-					}
-					else
-					{
-						string choiceName = command[1];
-						if (command[2] == "set" && command[3] == "text")
-						{
-							_assets.EditChoiceText(choiceName, command[4]);
-						}
-						else if (command[2] == "add")
-						{
-							_assets.AddOptionToChoice(choiceName, command[3], command[4]);
-						}
 					}
 					break;
 
 				case "save":
-					SaveGame(9);
+					SaveGame(0);
 					break;
 
 				default:
-					Settings.executeNext = false;
-					ExecuteTextCommand(command);
+					if (!afterSave)
+					{
+						ExecuteTextCommand(command);
+						Settings.executeNext = false;
+					}
 					break;
 			}
 		}

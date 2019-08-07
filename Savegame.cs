@@ -31,10 +31,16 @@ namespace VNet
 		{
 			try
 			{
+				Savegame save;
 				string saveGameLocation = Settings.SaveFilePath(saveFileIndex);
 				XmlSerializer serializer = new XmlSerializer(typeof(Savegame));
-				StreamReader streamReader = new StreamReader(saveGameLocation);
-				return (Savegame)serializer.Deserialize(streamReader);
+				using (StreamReader reader = new StreamReader(saveGameLocation))
+				{
+					save = (Savegame)serializer.Deserialize(reader);
+					reader.Close();
+				}
+
+				return save;
 			}
 			// On exception (no save, corrupted save...)
 			catch (Exception)

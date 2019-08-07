@@ -18,11 +18,19 @@ namespace VNet
 	{
 		
 		public string currentBackgroundName;
+
 		public string leftCharacterName;
+		public string leftCharacterMood;
+
 		public string centerCharacterName;
+		public string centerCharacterMood;
+
 		public string rightCharacterName;
+		public string rightCharacterMood;
 
 		public string fullText;
+		public string nameOfCharacterTalking;
+
 		[XmlIgnore]
 		public string displayedText;
 
@@ -33,22 +41,43 @@ namespace VNet
 
 		public string currentSongName;
 		public bool currentSongRepeating;
+		public double currentSongVolume;
+
 		public string currentSoundName;
 		public bool currentSoundRepeating;
+		public double currentSoundVolume;
 
 		[XmlIgnore]
-		public List<string> onscreenButtonNames;
+		public List<string> choiceButtonNames;
 		[XmlIgnore]
-		public List<string> temporaryUIElementNames;
+		public List<string> temporaryUIlayer1;
+		[XmlIgnore]
+		public List<string> temporaryUIlayer2;
 
 		public GameEnvironment()
 		{
 			currentBackgroundName = null;
+
 			leftCharacterName = null;
+			leftCharacterMood = null;
 			centerCharacterName = null;
+			centerCharacterMood = null;
 			rightCharacterName = null;
-			onscreenButtonNames = new List<string>();
-			temporaryUIElementNames = new List<string>();
+			rightCharacterMood = null;
+
+			nameOfCharacterTalking = null;
+			fullText = null;
+
+			currentSongName = null;
+			currentSongRepeating = false;
+			currentSongVolume = 0.0;
+			currentSoundName = null;
+			currentSoundRepeating = false;
+			currentSoundVolume = 0.0;
+
+			choiceButtonNames = new List<string>();
+			temporaryUIlayer1 = new List<string>();
+			temporaryUIlayer2 = new List<string>();
 		}
 	}
 }

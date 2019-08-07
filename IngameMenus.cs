@@ -1,12 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Xml.Serialization;
+using VNet.Assets;
 
 namespace VNet
 {
@@ -28,7 +32,7 @@ namespace VNet
 			};
 			ViewportContainer.Children.Add(darkOverlay);
 			Panel.SetZIndex(darkOverlay, 6);
-			_environment.temporaryUIElementNames.Add(darkOverlay.Name);
+			_environment.temporaryUIlayer1.Add(darkOverlay.Name);
 
 			TextBlock questionTextBlock = new TextBlock
 			{
@@ -40,7 +44,7 @@ namespace VNet
 				Foreground = new SolidColorBrush(Colors.White),
 				Margin = new Thickness(10, 10, 10, 20)
 			};
-			_environment.temporaryUIElementNames.Add(questionTextBlock.Name);
+			_environment.temporaryUIlayer1.Add(questionTextBlock.Name);
 
 			// Create grid for save slots
 			Grid slotGrid = new Grid
@@ -54,7 +58,7 @@ namespace VNet
 			slotGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
 			slotGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
 			slotGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-			_environment.temporaryUIElementNames.Add(slotGrid.Name);
+			_environment.temporaryUIlayer1.Add(slotGrid.Name);
 
 			// Create save slots
 			for (var i = 0; i < 3; i++)
@@ -69,14 +73,14 @@ namespace VNet
 					{
 						Name = "save_0" + (3 * i + j),
 						Margin = new Thickness(10, 10, 10, 10),
+						Background = new SolidColorBrush(Colors.White),
 						Width = 300,
 						Height = 100
 					};
-					slot.Click += SlotOnClick;
 					slotGrid.Children.Add(slot);
 					Grid.SetColumn(slot, j - 1);
 					Grid.SetRow(slot, i);
-					_environment.temporaryUIElementNames.Add(slot.Name);
+					_environment.temporaryUIlayer1.Add(slot.Name);
 
 					if (save == null)
 					{
@@ -88,34 +92,51 @@ namespace VNet
 							FontWeight = FontWeights.Bold
 						};
 						slot.Content = emptySlotText;
-						_environment.temporaryUIElementNames.Add(emptySlotText.Name);
+						slot.Click += SlotOnClick;
+						_environment.temporaryUIlayer1.Add(emptySlotText.Name);
 					}
 					else
 					{
+						Background selBackground =
+							_assets.backgrounds.Find(bg => bg.name == save.currentEnvironment.currentBackgroundName);
+						Image slotImage = new Image
+						{
+							Source = new BitmapImage(selBackground.imageUri)
+						};
+						
 						TextBlock slotText = new TextBlock
 						{
 							Name = "slotText",
 							Text = save.currentEnvironment.fullText,
-							FontSize = 16
+							FontSize = 14,
+							FontWeight = FontWeights.DemiBold,
+							MaxHeight = 70,
+							TextWrapping = TextWrapping.Wrap,
+							TextTrimming = TextTrimming.CharacterEllipsis
 						};
-						_environment.temporaryUIElementNames.Add(slotText.Name);
+						_environment.temporaryUIlayer1.Add(slotText.Name);
 
 						TextBlock slotDate = new TextBlock
 						{
 							Name = "slotDate",
-							Text = save.currentTime.ToString(CultureInfo.InvariantCulture),
-							FontSize = 16
+							Text = save.currentTime.ToString(CultureInfo.CurrentCulture),
+							FontSize = 14,
+							TextTrimming = TextTrimming.CharacterEllipsis,
+							Margin = new Thickness(0, 10, 0, 0)
 						};
-						_environment.temporaryUIElementNames.Add(slotDate.Name);
+						_environment.temporaryUIlayer1.Add(slotDate.Name);
 
-						StackPanel slotRightPanel = new StackPanel
+						Grid innerRightSlotGrid = new Grid
 						{
-							Name = "slotRightPanel",
-							Orientation = Orientation.Vertical
+							Name = "innerRightSlotGrid",
+							Margin = new Thickness(5, 0, 0, 0)
 						};
-						slotRightPanel.Children.Add(slotText);
-						slotRightPanel.Children.Add(slotDate);
-						_environment.temporaryUIElementNames.Add(slotRightPanel.Name);
+						innerRightSlotGrid.RowDefinitions.Add(new RowDefinition() { Height = new GridLength(5, GridUnitType.Star) });
+						innerRightSlotGrid.RowDefinitions.Add(new RowDefinition() { Height = new GridLength(2, GridUnitType.Star) });
+						innerRightSlotGrid.Children.Add(slotText);
+						innerRightSlotGrid.Children.Add(slotDate);
+						Grid.SetRow(slotText, 0);
+						Grid.SetRow(slotDate, 1);
 
 						Grid innerSlotGrid = new Grid
 						{
@@ -123,10 +144,13 @@ namespace VNet
 						};
 						innerSlotGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 						innerSlotGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-						innerSlotGrid.Children.Add(slotRightPanel);
-						Grid.SetColumn(slotRightPanel, 1);
+						innerSlotGrid.Children.Add(slotImage);
+						innerSlotGrid.Children.Add(innerRightSlotGrid);
+						Grid.SetColumn(slotImage, 0);
+						Grid.SetColumn(innerRightSlotGrid, 1);
 						slot.Content = innerSlotGrid;
-						_environment.temporaryUIElementNames.Add(innerSlotGrid.Name);
+						slot.Click += SlotOverwriteOnClick;
+						_environment.temporaryUIlayer1.Add(innerSlotGrid.Name);
 					}
 				}
 			}
@@ -138,7 +162,7 @@ namespace VNet
 				FontSize = 21,
 				FontWeight = FontWeights.Bold
 			};
-			_environment.temporaryUIElementNames.Add(cancelTextBlock.Name);
+			_environment.temporaryUIlayer1.Add(cancelTextBlock.Name);
 
 			Button cancelButton = new Button
 			{
@@ -150,7 +174,7 @@ namespace VNet
 				Width = 240
 			};
 			cancelButton.Click += CancelButtonOnClick;
-			_environment.temporaryUIElementNames.Add(cancelButton.Name);
+			_environment.temporaryUIlayer1.Add(cancelButton.Name);
 
 			StackPanel verticalStackPanel = new StackPanel
 			{
@@ -160,7 +184,7 @@ namespace VNet
 			verticalStackPanel.Children.Add(questionTextBlock);
 			verticalStackPanel.Children.Add(slotGrid);
 			verticalStackPanel.Children.Add(cancelButton);
-			_environment.temporaryUIElementNames.Add(verticalStackPanel.Name);
+			_environment.temporaryUIlayer1.Add(verticalStackPanel.Name);
 
 			Border saveMenuBorder = new Border
 			{
@@ -177,10 +201,118 @@ namespace VNet
 			Canvas.SetTop(saveMenuBorder, 90);
 			Panel.SetZIndex(saveMenuBorder, 7);
 
-			_environment.temporaryUIElementNames.Add(saveMenuBorder.Name);
+			_environment.temporaryUIlayer1.Add(saveMenuBorder.Name);
 		}
 
-		// Event handler for clicking save slot
+		// Event handler for clicking filled save slot, displays confirmation box
+		private void SlotOverwriteOnClick(object sender, RoutedEventArgs e)
+		{
+			// Gets selected save file info
+			Button btn = (Button)sender;
+			if (!Int32.TryParse(btn.Name.Substring(btn.Name.Length - 1, 1), out int saveIndex))
+			{
+				return;
+			}
+
+			// Generates UI 
+			TextBlock questionTextBlock = new TextBlock
+			{
+				Name = "questionTextBlock",
+				Text = "Overwrite save game?",
+				TextAlignment = TextAlignment.Center,
+				FontSize = 21,
+				FontWeight = FontWeights.Bold,
+				Foreground = new SolidColorBrush(Colors.White),
+				Margin = new Thickness(10, 10, 10, 10)
+			};
+			_environment.temporaryUIlayer2.Add(questionTextBlock.Name);
+
+			TextBlock overwriteTextBlock = new TextBlock
+			{
+				Name = "overwriteTextBlock",
+				Text = "Overwrite",
+				FontSize = 21,
+				FontWeight = FontWeights.Bold
+			};
+			_environment.temporaryUIlayer2.Add(overwriteTextBlock.Name);
+
+			TextBlock cancelTextBlock = new TextBlock
+			{
+				Name = "cancelTextBlock",
+				Text = "Cancel",
+				FontSize = 21,
+				FontWeight = FontWeights.Bold
+			};
+			_environment.temporaryUIlayer2.Add(cancelTextBlock.Name);
+
+			Button overwriteButton = new Button
+			{
+				Name = "overwrite_save_0" + saveIndex,
+				IsDefault = true,
+				Content = overwriteTextBlock,
+				Margin = new Thickness(5, 5, 5, 5),
+				Padding = new Thickness(5, 5, 5, 5)
+			};
+			overwriteButton.Click += SlotOnClick;
+			_environment.temporaryUIlayer2.Add(overwriteButton.Name);
+
+			Button cancelButton = new Button
+			{
+				Name = "cancelButton",
+				IsCancel = true,
+				Content = cancelTextBlock,
+				Margin = new Thickness(5, 5, 5, 5),
+				Padding = new Thickness(5, 5, 5, 5)
+			};
+			cancelButton.Click += SecondLayerCancelButtonOnClick;
+			_environment.temporaryUIlayer2.Add(cancelButton.Name);
+
+			Grid buttonGrid = new Grid
+			{
+				Name = "buttonGrid",
+				Margin = new Thickness(10, 10, 10, 10),
+				MinWidth = 400
+			};
+			buttonGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+			buttonGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+			buttonGrid.Children.Add(overwriteButton);
+			buttonGrid.Children.Add(cancelButton);
+			Grid.SetColumn(overwriteButton, 0);
+			Grid.SetColumn(cancelButton, 1);
+			_environment.temporaryUIlayer2.Add(buttonGrid.Name);
+
+			StackPanel verticalStackPanel = new StackPanel
+			{
+				Name = "verticalStackPanel",
+				Orientation = Orientation.Vertical,
+				MinHeight = 150
+			};
+			verticalStackPanel.Children.Add(questionTextBlock);
+			verticalStackPanel.Children.Add(buttonGrid);
+			_environment.temporaryUIlayer2.Add(verticalStackPanel.Name);
+
+			Border exitMenuBorder = new Border
+			{
+				Name = "exitMenuBorder",
+				BorderThickness = new Thickness(5, 5, 5, 5),
+				BorderBrush = new SolidColorBrush(Colors.White),
+				Background = new SolidColorBrush(Color.FromArgb(255, 0, 0, 0)),
+				Child = verticalStackPanel
+			};
+			ViewportContainer.Children.Add(exitMenuBorder);
+			Canvas.SetLeft(exitMenuBorder, (Settings.windowWidth / 2) - 200);
+			Canvas.SetTop(exitMenuBorder, (Settings.windowHeight / 2) - 75);
+			Panel.SetZIndex(exitMenuBorder, 7);
+
+			_environment.temporaryUIlayer2.Add(exitMenuBorder.Name);
+		}
+
+		private void SecondLayerCancelButtonOnClick(object sender, RoutedEventArgs e)
+		{
+			ClearTemporaryUiElements(2);
+		}
+
+		// Event handler for clicking empty save slot, saves game
 		private void SlotOnClick(object sender, RoutedEventArgs e)
 		{
 			Button btn = (Button) sender;
@@ -188,8 +320,28 @@ namespace VNet
 			{
 				SaveGame(saveIndex);
 			}
-			ClearTemporaryUiElements();
+			ClearTemporaryUiElements(1);
+			ClearTemporaryUiElements(2);
 			Settings.inGame = true;
+		}
+
+		/*
+		 * Function triggers writing of current game status into XML file
+		 */
+		public void SaveGame(int saveFileIndex)
+		{
+			if (saveFileIndex < 0 || saveFileIndex > 9)
+			{
+				return;
+			}
+			Savegame savegame = new Savegame(_environment, _assets.variables, _currentScript.currentLine - 1);
+			string saveGameLocation = ".\\saves\\save_" + saveFileIndex.ToString("D2");
+			XmlSerializer serializer = new XmlSerializer(savegame.GetType());
+			using (StreamWriter writer = new StreamWriter(saveGameLocation))
+			{
+				serializer.Serialize(writer, savegame);
+				writer.Close();
+			}
 		}
 
 		/*
@@ -208,7 +360,7 @@ namespace VNet
 			};
 			ViewportContainer.Children.Add(darkOverlay);
 			Panel.SetZIndex(darkOverlay, 6);
-			_environment.temporaryUIElementNames.Add(darkOverlay.Name);
+			_environment.temporaryUIlayer1.Add(darkOverlay.Name);
 
 			TextBlock questionTextBlock = new TextBlock
 			{
@@ -220,7 +372,7 @@ namespace VNet
 				Foreground = new SolidColorBrush(Colors.White),
 				Margin = new Thickness(10, 10, 10, 10)
 			};
-			_environment.temporaryUIElementNames.Add(questionTextBlock.Name);
+			_environment.temporaryUIlayer1.Add(questionTextBlock.Name);
 
 			TextBlock exitTextBlock = new TextBlock
 			{
@@ -229,7 +381,7 @@ namespace VNet
 				FontSize = 21,
 				FontWeight = FontWeights.Bold
 			};
-			_environment.temporaryUIElementNames.Add(exitTextBlock.Name);
+			_environment.temporaryUIlayer1.Add(exitTextBlock.Name);
 
 			TextBlock cancelTextBlock = new TextBlock
 			{
@@ -238,7 +390,7 @@ namespace VNet
 				FontSize = 21,
 				FontWeight = FontWeights.Bold
 			};
-			_environment.temporaryUIElementNames.Add(cancelTextBlock.Name);
+			_environment.temporaryUIlayer1.Add(cancelTextBlock.Name);
 
 			Button exitButton = new Button
 			{
@@ -249,7 +401,7 @@ namespace VNet
 				Padding = new Thickness(5, 5, 5, 5)
 			};
 			exitButton.Click += SecondExitButtonOnClick;
-			_environment.temporaryUIElementNames.Add(exitButton.Name);
+			_environment.temporaryUIlayer1.Add(exitButton.Name);
 
 			Button cancelButton = new Button
 			{
@@ -260,7 +412,7 @@ namespace VNet
 				Padding = new Thickness(5, 5, 5, 5)
 			};
 			cancelButton.Click += CancelButtonOnClick;
-			_environment.temporaryUIElementNames.Add(cancelButton.Name);
+			_environment.temporaryUIlayer1.Add(cancelButton.Name);
 
 			Grid buttonGrid = new Grid
 			{
@@ -274,7 +426,7 @@ namespace VNet
 			buttonGrid.Children.Add(cancelButton);
 			Grid.SetColumn(exitButton, 0);
 			Grid.SetColumn(cancelButton, 1);
-			_environment.temporaryUIElementNames.Add(buttonGrid.Name);
+			_environment.temporaryUIlayer1.Add(buttonGrid.Name);
 
 			StackPanel verticalStackPanel = new StackPanel
 			{
@@ -284,7 +436,7 @@ namespace VNet
 			};
 			verticalStackPanel.Children.Add(questionTextBlock);
 			verticalStackPanel.Children.Add(buttonGrid);
-			_environment.temporaryUIElementNames.Add(verticalStackPanel.Name);
+			_environment.temporaryUIlayer1.Add(verticalStackPanel.Name);
 
 			Border exitMenuBorder = new Border
 			{
@@ -299,7 +451,7 @@ namespace VNet
 			Canvas.SetTop(exitMenuBorder, (Settings.windowHeight / 2) - 75);
 			Panel.SetZIndex(exitMenuBorder, 7);
 
-			_environment.temporaryUIElementNames.Add(exitMenuBorder.Name);
+			_environment.temporaryUIlayer1.Add(exitMenuBorder.Name);
 		}
 		private void SecondExitButtonOnClick(object sender, RoutedEventArgs e)
 		{
@@ -322,7 +474,7 @@ namespace VNet
 			};
 			ViewportContainer.Children.Add(darkOverlay);
 			Panel.SetZIndex(darkOverlay, 6);
-			_environment.temporaryUIElementNames.Add(darkOverlay.Name);
+			_environment.temporaryUIlayer1.Add(darkOverlay.Name);
 
 			TextBlock questionTextBlock = new TextBlock
 			{
@@ -334,7 +486,7 @@ namespace VNet
 				Foreground = new SolidColorBrush(Colors.White),
 				Margin = new Thickness(10, 10, 10, 10)
 			};
-			_environment.temporaryUIElementNames.Add(questionTextBlock.Name);
+			_environment.temporaryUIlayer1.Add(questionTextBlock.Name);
 
 			TextBlock menuTextBlock = new TextBlock
 			{
@@ -343,7 +495,7 @@ namespace VNet
 				FontSize = 21,
 				FontWeight = FontWeights.Bold
 			};
-			_environment.temporaryUIElementNames.Add(menuTextBlock.Name);
+			_environment.temporaryUIlayer1.Add(menuTextBlock.Name);
 
 			TextBlock cancelTextBlock = new TextBlock
 			{
@@ -352,7 +504,7 @@ namespace VNet
 				FontSize = 21,
 				FontWeight = FontWeights.Bold
 			};
-			_environment.temporaryUIElementNames.Add(cancelTextBlock.Name);
+			_environment.temporaryUIlayer1.Add(cancelTextBlock.Name);
 
 			Button menuButton = new Button
 			{
@@ -363,7 +515,7 @@ namespace VNet
 				Padding = new Thickness(5, 5, 5, 5)
 			};
 			menuButton.Click += SecondMenuButtonOnClick;
-			_environment.temporaryUIElementNames.Add(menuButton.Name);
+			_environment.temporaryUIlayer1.Add(menuButton.Name);
 
 			Button cancelButton = new Button
 			{
@@ -374,7 +526,7 @@ namespace VNet
 				Padding = new Thickness(5, 5, 5, 5)
 			};
 			cancelButton.Click += CancelButtonOnClick;
-			_environment.temporaryUIElementNames.Add(cancelButton.Name);
+			_environment.temporaryUIlayer1.Add(cancelButton.Name);
 
 			Grid buttonGrid = new Grid
 			{
@@ -388,7 +540,7 @@ namespace VNet
 			buttonGrid.Children.Add(cancelButton);
 			Grid.SetColumn(menuButton, 0);
 			Grid.SetColumn(cancelButton, 1);
-			_environment.temporaryUIElementNames.Add(buttonGrid.Name);
+			_environment.temporaryUIlayer1.Add(buttonGrid.Name);
 
 			StackPanel verticalStackPanel = new StackPanel
 			{
@@ -398,7 +550,7 @@ namespace VNet
 			};
 			verticalStackPanel.Children.Add(questionTextBlock);
 			verticalStackPanel.Children.Add(buttonGrid);
-			_environment.temporaryUIElementNames.Add(verticalStackPanel.Name);
+			_environment.temporaryUIlayer1.Add(verticalStackPanel.Name);
 
 			Border exitMenuBorder = new Border
 			{
@@ -413,11 +565,11 @@ namespace VNet
 			Canvas.SetTop(exitMenuBorder, (Settings.windowHeight / 2) - 75);
 			Panel.SetZIndex(exitMenuBorder, 7);
 
-			_environment.temporaryUIElementNames.Add(exitMenuBorder.Name);
+			_environment.temporaryUIlayer1.Add(exitMenuBorder.Name);
 		}
 		private void SecondMenuButtonOnClick(object sender, RoutedEventArgs e)
 		{
-			ClearTemporaryUiElements();
+			ClearTemporaryUiElements(1);
 			ClearViewport(true);
 			_currentScript.currentLine = _currentScript.firstGameplayLine;
 			MainMenu(true);
@@ -425,7 +577,7 @@ namespace VNet
 
 		private void CancelButtonOnClick(object sender, RoutedEventArgs e)
 		{
-			ClearTemporaryUiElements();
+			ClearTemporaryUiElements(1);
 			Settings.inGame = true;
 		}
 	}
