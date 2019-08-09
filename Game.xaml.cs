@@ -386,14 +386,20 @@ namespace VNet
 			currentScriptIndex = scriptIndex;
 			while(true)
 			{
-				string[] command = ProcessScriptLine();
+				List<string> command = ProcessScriptLine();
+				// End of file
 				if (command == null)
 				{
 					_lexical.Source = oldScriptSource;
 					currentScriptIndex = oldScriptIndex;
 					return scripts[scriptIndex].firstGameplayLine;
 				}
-				if (Settings.SetupKeywordList.Contains(command[0]))
+				// Empty line
+				if (command.Count == 0)
+				{
+					continue;
+				}
+				if (Settings.SetupKeywordList.Contains(command[0]) || Settings.SetupAndGameKeywordList.Contains(command[0]))
 				{
 					ExecuteCommand(command, false);
 				}
@@ -405,33 +411,9 @@ namespace VNet
 		}
 
 		/*
-		 * Function executes a single line in the current script if it is a text line
-		 */
-		private void ExecuteTextCommand(string[] command)
-		{
-			// For protagonist
-			if (command[0] == "PC")
-			{
-				if (command[2] == "thought")
-				{
-					ShowText("", command[1], true);
-				}
-				else
-				{
-					ShowText("", command[1]);
-				}
-				return;
-			}
-
-			// For other characters
-			Character selectedCharacter = _assets.characters.Find(i => i.name == command[0]);
-			ShowText(selectedCharacter != null ? selectedCharacter.name : command[0], command[1]);
-		}
-
-		/*
 		 * Function changes the currently showing background to the one with the given name
 		 */
-		private void ShowBackground(string bgName, int fadeInDuration)
+		private bool ShowBackground(string bgName, int fadeInDuration)
 		{
 			_fadeIn = new DoubleAnimation
 			{
@@ -442,20 +424,23 @@ namespace VNet
 			_fadeIn.Completed += (sender, args) => { Settings.allowProgress = true; };
 
 			Background selectedBackground = _assets.backgrounds.Find(i => i.name == bgName);
-			if (selectedBackground != null)
+			if (selectedBackground == null) return false;
+
+			if (fadeInDuration > 200)
 			{
 				Settings.allowProgress = false;
-				_environment.currentBackgroundName = selectedBackground.name;
-				if (selectedBackground.imageUri == null)
-				{
-					_backgroundImage.Source = selectedBackground.image;
-				}
-				else
-				{
-					_backgroundImage.Source = new BitmapImage(selectedBackground.imageUri);
-				}
-				_backgroundImage.BeginAnimation(OpacityProperty, _fadeIn);
 			}
+			_environment.currentBackgroundName = selectedBackground.name;
+			if (selectedBackground.imageUri == null)
+			{
+				_backgroundImage.Source = selectedBackground.image;
+			}
+			else
+			{
+				_backgroundImage.Source = new BitmapImage(selectedBackground.imageUri);
+			}
+			_backgroundImage.BeginAnimation(OpacityProperty, _fadeIn);
+			return true;
 		}
 
 		/*
@@ -470,7 +455,7 @@ namespace VNet
 		/*
 		 * Function shows a given character with the given sprite (mood) in the given position
 		 */
-		private void ShowCharacter(string chName, string moodName, int fadeInDuration, string position = "")
+		private bool ShowCharacter(string chName, string moodName, int fadeInDuration, string position = "")
 		{
 			_fadeIn = new DoubleAnimation
 			{
@@ -482,45 +467,48 @@ namespace VNet
 
 			Character selectedCharacter = _assets.characters.Find(i => i.name == chName);
 			Mood selectedMood = selectedCharacter?.moods.Find(i => i.name == moodName);
-			if (selectedMood != null)
+			if (selectedMood == null) return false;
+			
+			if (fadeInDuration > 200)
 			{
 				Settings.allowProgress = false;
-				double xOffset;
-				double yOffset;
-				if (position == "left")
-				{
-					_environment.leftCharacterName = selectedCharacter.name;
-					_environment.leftCharacterMood = selectedMood.name;
-					xOffset = 0;
-					yOffset = 0;
-					_leftCharacter.Source = new BitmapImage(selectedMood.imageUri);
-					_leftCharacter.BeginAnimation(OpacityProperty, _fadeIn);
-					Canvas.SetLeft(_leftCharacter, xOffset);
-					Canvas.SetTop(_leftCharacter, yOffset);
-				}
-				else if (position == "right")
-				{
-					_environment.rightCharacterName = selectedCharacter.name;
-					_environment.rightCharacterMood = selectedMood.name;
-					xOffset = 760;
-					yOffset = 0;
-					_rightCharacter.Source = new BitmapImage(selectedMood.imageUri);
-					_rightCharacter.BeginAnimation(OpacityProperty, _fadeIn);
-					Canvas.SetLeft(_rightCharacter, xOffset);
-					Canvas.SetTop(_rightCharacter, yOffset);
-				}
-				else
-				{
-					_environment.centerCharacterName = selectedCharacter.name;
-					_environment.centerCharacterMood = selectedMood.name;
-					xOffset = 380;
-					yOffset = 0;
-					_centerCharacter.Source = new BitmapImage(selectedMood.imageUri);
-					_centerCharacter.BeginAnimation(OpacityProperty, _fadeIn);
-					Canvas.SetLeft(_centerCharacter, xOffset);
-					Canvas.SetTop(_centerCharacter, yOffset);
-				}
 			}
+			double xOffset;
+			double yOffset;
+			if (position == "left")
+			{
+				_environment.leftCharacterName = selectedCharacter.name;
+				_environment.leftCharacterMood = selectedMood.name;
+				xOffset = 0;
+				yOffset = 0;
+				_leftCharacter.Source = new BitmapImage(selectedMood.imageUri);
+				_leftCharacter.BeginAnimation(OpacityProperty, _fadeIn);
+				Canvas.SetLeft(_leftCharacter, xOffset);
+				Canvas.SetTop(_leftCharacter, yOffset);
+			}
+			else if (position == "right")
+			{
+				_environment.rightCharacterName = selectedCharacter.name;
+				_environment.rightCharacterMood = selectedMood.name;
+				xOffset = 760;
+				yOffset = 0;
+				_rightCharacter.Source = new BitmapImage(selectedMood.imageUri);
+				_rightCharacter.BeginAnimation(OpacityProperty, _fadeIn);
+				Canvas.SetLeft(_rightCharacter, xOffset);
+				Canvas.SetTop(_rightCharacter, yOffset);
+			}
+			else
+			{
+				_environment.centerCharacterName = selectedCharacter.name;
+				_environment.centerCharacterMood = selectedMood.name;
+				xOffset = 380;
+				yOffset = 0;
+				_centerCharacter.Source = new BitmapImage(selectedMood.imageUri);
+				_centerCharacter.BeginAnimation(OpacityProperty, _fadeIn);
+				Canvas.SetLeft(_centerCharacter, xOffset);
+				Canvas.SetTop(_centerCharacter, yOffset);
+			}
+			return true;
 		}
 
 		/*
@@ -764,11 +752,12 @@ namespace VNet
 		/*
 		 * Pauses the gameplay and shows multiple buttons corresponding to choice options
 		 */
-		private void ShowChoice(string choiceName)
+		private bool ShowChoice(string choiceName)
 		{
 			Settings.allowProgress = false;
 			int textTop = 100;
 			Choice ch = _assets.choices.Find(i => i.name == choiceName);
+			if (ch == null) return false;
 			_textBlock.Text = ch.text;
 
 			foreach (Option opt in ch.options)
@@ -797,6 +786,8 @@ namespace VNet
 				Panel.SetZIndex(button, 4);
 				_environment.choiceButtonNames.Add(button.Name);
 			}
+
+			return true;
 		}
 		/*
 		 * Event handler for clicking a button in choice, clears the choice, resumes gameplay and jumps to specified label
@@ -840,9 +831,8 @@ namespace VNet
 			Settings.executeNext = true;
 			while (Settings.executeNext)
 			{
-				string[] command = ProcessScriptLine();
-				if (command == null) return;
-				if (Settings.SetupKeywordList.Contains(command[0]) || command[0] == null) continue;
+				List<string> command = ProcessScriptLine();
+				if (command.Count == 0 || Settings.SetupKeywordList.Contains(command[0])) continue;
 
 				if (Settings.afterLoad)
 				{

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Text;
@@ -13,9 +14,9 @@ namespace VNet
 	public partial class Game : Window
 	{
 		/*
-		 * Function processes next line in current script and returns array of commands and arguments from that line
+		 * Function processes next line in current script and returns list of commands and arguments from that line
 		 */
-		private string[] ProcessScriptLine()
+		private List<string> ProcessScriptLine()
 		{
 			_lexical.Source = scripts[currentScriptIndex];
 
@@ -29,7 +30,7 @@ namespace VNet
 			bool insideQuotes = false;
 			string quotedString = "";
 
-			string[] lineComponents = new string[7];
+			List<string> lineComponents = new List<string>();
 
 			while (true)
 			{
@@ -39,52 +40,31 @@ namespace VNet
 					{
 						// Sets the "command" for this line
 						case Type.Keyword:
-							if (lineComponents[0] != null)
+							// If the command already has a beginning keyword, just treat it as a regular word
+							if (lineComponents.Count > 0)
 							{
 								if (insideQuotes)
 								{
 									quotedString += token.Lexem;
 								}
-								else if (lineComponents[0] == null)
-									lineComponents[0] = token.Lexem;
-								else if (lineComponents[1] == null)
-									lineComponents[1] = token.Lexem;
-								else if (lineComponents[2] == null)
-									lineComponents[2] = token.Lexem;
-								else if (lineComponents[3] == null)
-									lineComponents[3] = token.Lexem;
-								else if (lineComponents[4] == null)
-									lineComponents[4] = token.Lexem;
-								else if (lineComponents[5] == null)
-									lineComponents[5] = token.Lexem;
-								else if (lineComponents[6] == null)
-									lineComponents[6] = token.Lexem;
+								else
+								{
+									lineComponents.Add(token.Lexem);
+								}
 								break;
 							}
-							lineComponents[0] = token.Lexem;
+							lineComponents.Add(token.Lexem);
 							if (token.Lexem == "label")
-								lineComponents[1] = (token.Location.Line + 1).ToString();
+								lineComponents.Add((token.Location.Line + 1).ToString());
 							break;
+						
 						// If word is in quotes adds to string in quotes, otherwise puts the word in first empty spot of command
 						case Type.Word:
 							if (insideQuotes)
 							{
 								quotedString += token.Lexem;
 							}
-							else if (lineComponents[0] == null)
-								lineComponents[0] = token.Lexem;
-							else if (lineComponents[1] == null)
-								lineComponents[1] = token.Lexem;
-							else if (lineComponents[2] == null)
-								lineComponents[2] = token.Lexem;
-							else if (lineComponents[3] == null)
-								lineComponents[3] = token.Lexem;
-							else if (lineComponents[4] == null)
-								lineComponents[4] = token.Lexem;
-							else if (lineComponents[5] == null)
-								lineComponents[5] = token.Lexem;
-							else if (lineComponents[6] == null)
-								lineComponents[6] = token.Lexem;
+							else lineComponents.Add(token.Lexem);
 							break;
 
 						// If number is in quotes adds to string in quotes, otherwise puts the number in first empty spot of command
@@ -93,20 +73,7 @@ namespace VNet
 							{
 								quotedString += token.Lexem;
 							}
-							else if (lineComponents[0] == null)
-								lineComponents[0] = token.Lexem;
-							else if (lineComponents[1] == null)
-								lineComponents[1] = token.Lexem;
-							else if (lineComponents[2] == null)
-								lineComponents[2] = token.Lexem;
-							else if (lineComponents[3] == null)
-								lineComponents[3] = token.Lexem;
-							else if (lineComponents[4] == null)
-								lineComponents[4] = token.Lexem;
-							else if (lineComponents[5] == null)
-								lineComponents[5] = token.Lexem;
-							else if (lineComponents[6] == null)
-								lineComponents[6] = token.Lexem;
+							else lineComponents.Add(token.Lexem);
 							break;
 
 						// If it is an opening quote starts adding following elements to quoted string, otherwise closes quote and adds whole string to first available variable slot
@@ -114,20 +81,7 @@ namespace VNet
 							insideQuotes = !insideQuotes;
 							if (!insideQuotes)
 							{
-								if (lineComponents[0] == null)
-									lineComponents[0] = quotedString;
-								else if (lineComponents[1] == null)
-									lineComponents[1] = quotedString;
-								else if (lineComponents[2] == null)
-									lineComponents[2] = quotedString;
-								else if (lineComponents[3] == null)
-									lineComponents[3] = quotedString;
-								else if (lineComponents[4] == null)
-									lineComponents[4] = quotedString;
-								else if (lineComponents[5] == null)
-									lineComponents[5] = quotedString;
-								else if (lineComponents[6] == null)
-									lineComponents[6] = quotedString;
+								lineComponents.Add(quotedString);
 								quotedString = "";
 							}
 							break;
@@ -138,20 +92,7 @@ namespace VNet
 							{
 								quotedString += token.Lexem;
 							}
-							else if (lineComponents[0] == null)
-								lineComponents[0] = token.Lexem;
-							else if (lineComponents[1] == null)
-								lineComponents[1] = token.Lexem;
-							else if (lineComponents[2] == null)
-								lineComponents[2] = token.Lexem;
-							else if (lineComponents[3] == null)
-								lineComponents[3] = token.Lexem;
-							else if (lineComponents[4] == null)
-								lineComponents[4] = token.Lexem;
-							else if (lineComponents[5] == null)
-								lineComponents[5] = token.Lexem;
-							else if (lineComponents[6] == null)
-								lineComponents[6] = token.Lexem;
+							else lineComponents.Add(token.Lexem);
 							break;
 
 						case Type.Whitespace:
@@ -168,7 +109,15 @@ namespace VNet
 				}
 				token = _lexical.GetNextToken();
 				if (token.Type == Type.NewLine) break;
-				if (token.Type == Type.Eof) break;
+
+				if (token.Type == Type.Eof)
+				{
+					if (lineComponents.Count > 0)
+					{
+						break;
+					}
+					return null;
+				}
 				if (token.Type == Type.LexError)
 				{
 					MessageBox.Show("Error in script on line " + token.Location.Line + ", column " +
@@ -183,7 +132,7 @@ namespace VNet
 		 * Function executes a single line in the current script after it has already been processed into an array of arguments
 		 * Parameter afterSave controls whether the line is the first line after loading a saved game, in which case it does not execute text lines (as the text is contained in the save)
 		 */
-		private void ExecuteCommand(string[] command, bool afterSave)
+		private void ExecuteCommand(List<String> command, bool afterSave)
 		{
 			int intValue;
 			bool boolValue;
@@ -191,52 +140,67 @@ namespace VNet
 			switch (command[0])
 			{
 				// Setup
-				case "name":
-					Settings.gameName = command[1];
-					break;
-
 				case "label":
-					_assets.CreateLabel(command[2], currentScriptIndex.ToString(), command[1]);
+					if (command.Count == 3)
+					{
+						_assets.CreateLabel(command[2], currentScriptIndex.ToString(), command[1]);
+					}
 					break;
 
 				case "image":
-					if (command[3] == null)
+					switch (command.Count)
 					{
-						_assets.CreateBackground(command[1], command[2], true);
-					}
-					else
-					{
-						_assets.AddImageToCharacter(command[1], command[2], command[3]);
+						case 3:
+							_assets.CreateBackground(command[1], command[2], true);
+							break;
+						case 4:
+							_assets.AddImageToCharacter(command[1], command[2], command[3]);
+							break;
 					}
 					break;
 
 				case "character":
-					if (command[3] != null)
-						_assets.CreateCharacter(command[1], command[2], command[3]);
-					else if (command[2] != null)
-						_assets.CreateCharacter(command[1], command[2]);
-					else
-						_assets.CreateCharacter(command[1]);
+					switch (command.Count)
+					{
+						case 4:
+							_assets.CreateCharacter(command[1], command[2], command[3]);
+							break;
+						case 3:
+							_assets.CreateCharacter(command[1], command[2]);
+							break;
+						case 2:
+							_assets.CreateCharacter(command[1]);
+							break;
+					}
 					break;
 
 				case "color":
-					_assets.SetCharacterColor(command[1], command[2], command[3], command[4]);
+					if (command.Count == 5)
+					{
+						_assets.SetCharacterColor(command[1], command[2], command[3], command[4]);
+					}
 					break;
 
 				case "sound":
-					_assets.CreateSound(command[1], command[2], false);
+					if (command.Count == 3)
+					{
+						_assets.CreateSound(command[1], command[2], false);
+					}
 					break;
 
 				case "music":
-					_assets.CreateSound(command[1], command[2], true);
+					if (command.Count == 3)
+					{
+						_assets.CreateSound(command[1], command[2], true);
+					}
 					break;
 
 				case "choice":
-					if (command[1] == "create")
+					if (command.Count == 3 && command[1] == "create")
 					{
 						_assets.CreateChoice(command[2]);
 					}
-					else
+					else if (command.Count == 5)
 					{
 						string choiceName = command[1];
 						if (command[2] == "set" && command[3] == "text")
@@ -252,35 +216,78 @@ namespace VNet
 				
 				// Script navigation
 				case "jump":
-					JumpToLabel(command[1]);
+					if (command.Count == 2)
+					{
+						JumpToLabel(command[1]);
+					}
 					break;
 
 				case "include":
-					scripts.Add(new Script(command[1], scripts.Count));
-					ProcessScript(scripts.Count - 1);
+					if (command.Count == 2)
+					{
+						scripts.Add(new Script(command[1], scripts.Count));
+						ProcessScript(scripts.Count - 1);
+					}
 					break;
 
 				// Graphics
 				case "show":
-					if (command[1] == "choice")
+					// Additional options
+					if (command.Contains("pause"))
 					{
 						Settings.executeNext = false;
-						ShowChoice(command[2]);
 					}
-					if (command.Contains("pause")) Settings.executeNext = false;
-					// Only parameter is name, therefore show as background
-					if (command[2] == null)
+					int fadeDuration = 0;
+					if (command.Contains("fade"))
 					{
-						ShowBackground(command[1], 500);
+						int commandIndex = command.FindIndex(s => s == "fade");
+						int.TryParse(command[commandIndex + 1], out fadeDuration);
 					}
-					// More parameters, show as character
-					else if (command[2] != null)
+
+					if (command.Count >= 2)
 					{
-						if (command[3] != null)
-							ShowCharacter(command[1], command[2], 500, command[3]);
+						// Try to show background with given name
+						if (ShowBackground(command[1], fadeDuration))
+						{
+							break;
+						}
+						// Try to show choice with given name
+						if (ShowChoice(command[1]))
+						{
+							Settings.executeNext = false;
+							break;
+						}
+					}
+
+					// Try to show character with given name
+					if (command.Count >= 4)
+					{
+						if (command.Contains("left"))
+						{
+							if (ShowCharacter(command[1], command[2], fadeDuration, "left"))
+							{
+								break;
+							}
+
+						}
+						if (command.Contains("right"))
+						{
+							if (ShowCharacter(command[1], command[2], fadeDuration, "right"))
+							{
+								break;
+							}
+
+						}
 						else
-							ShowCharacter(command[1], command[2], 500);
+						{
+							if (ShowCharacter(command[1], command[2], fadeDuration))
+							{
+								break;
+							}
+
+						}
 					}
+					
 					break;
 
 				case "clear":
@@ -289,18 +296,22 @@ namespace VNet
 						Settings.executeNext = false;
 					}
 
-					if (command[1] == "background")
+					switch (command.Count)
 					{
-						ClearBackground();
+						case 1:
+							ClearCharacters();
+							break;
+						case 2 when command[1] == "background":
+							ClearBackground();
+							break;
+						case 2:
+							ClearCharacters(command[1]);
+							break;
 					}
-					else if (command[1] != null)
-					{
-						ClearCharacters(command[1]);
-					}
-					else
-					{
-						ClearCharacters();
-					}
+					break;
+
+				case "ui":
+					//TODO show and hide UI
 					break;
 
 				// Sound
@@ -309,7 +320,8 @@ namespace VNet
 					{
 						Settings.executeNext = false;
 					}
-					PlaySound(command[1], Double.TryParse(command[2], NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var volume) ? volume : 1.0, command.Contains("r") || command.Contains("repeat"));
+
+					PlaySound(command[1], double.TryParse(command[2], NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var volume) ? volume : 1.0, command.Contains("r") || command.Contains("repeat"));
 					break;
 
 				case "stop":
@@ -406,15 +418,62 @@ namespace VNet
 					}
 					break;
 
+				// Settings
+				case "name":
+					if (command.Count == 3)
+					{
+						if (command[1] == "game")
+						{
+							Settings.gameName = command[2];
+						}
+						else if (command[1] == "protagonist")
+						{
+							Settings.protagonistName = command[2];
+						}
+					}
+					break;
+
 				// Text
 				default:
 					if (!afterSave)
 					{
-						ExecuteTextCommand(command);
+						if (!ExecuteTextCommand(command))
+						{
+							MessageBox.Show("Error in displaying text on line " + scripts[currentScriptIndex].currentLine + "!");
+						}
 						Settings.executeNext = false;
 					}
 					break;
 			}
+		}
+
+		/*
+		 * Function executes a single line in the current script if it is a text line
+		 */
+		private bool ExecuteTextCommand(List<string> command)
+		{
+			if (command.Count < 2) return false;
+
+			// For protagonist
+			if (command[0] == "PC" || command[0] == Settings.protagonistName)
+			{
+				if (command.Contains("thought"))
+				{
+					ShowText(Settings.protagonistName, command[1], true);
+				}
+				else
+				{
+					ShowText(Settings.protagonistName, command[1]);
+				}
+
+				return true;
+			}
+
+			// For other characters
+			Character selectedCharacter = _assets.characters.Find(i => i.name == command[0]);
+			ShowText(selectedCharacter != null ? selectedCharacter.name : command[0], command[1]);
+
+			return true;
 		}
 	}
 }
