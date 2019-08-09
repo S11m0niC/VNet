@@ -93,19 +93,22 @@ namespace VNet.Assets
 			}
 		}
 
-		public void CreateLabel(string name, string line)
+		public void CreateLabel(string name, string scriptIndex, string line)
 		{
 			if (int.TryParse(line, out int ln))
 			{
-				Label lab = labels.Find(i => i.name == name);
-				if (lab != null)
+				if (int.TryParse(scriptIndex, out int ind))
 				{
-					lab.lineNumber = ln;
-					return;
+					Label lab = labels.Find(i => i.name == name);
+					if (lab != null)
+					{
+						lab.lineNumber = ln;
+						return;
+					}
+					int lineNum = ln;
+					var label = new Label(name, ind, lineNum);
+					labels.Add(label);
 				}
-				int lineNum = ln;
-				var label = new Label(name, lineNum);
-				labels.Add(label);
 			}
 		}
 

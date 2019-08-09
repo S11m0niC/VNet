@@ -34,7 +34,9 @@ namespace VNet
 	public partial class Game : Window
 	{
 		private Assets.Assets _assets;
-		private Script _currentScript;
+		private List<Script> scripts;
+		public int currentScriptIndex;
+
 		private LexicalAnalysis _lexical;
 		private GameEnvironment _environment;
 
@@ -54,6 +56,7 @@ namespace VNet
 
 		private DoubleAnimation _fadeIn;
 		private DoubleAnimation _fadeOut;
+
 		private DispatcherTimer _textTimer;
 
 		private MediaPlayer _backgroundMusicPlayer;
@@ -62,6 +65,7 @@ namespace VNet
 		public Game()
 		{
 			InitializeComponent();
+			scripts = new List<Script>();
 		}
 
 		/*
@@ -137,9 +141,9 @@ namespace VNet
 			};
 			splashScreenFadeOut.Completed += SplashScreenFadeOutCompleted;
 
-			_currentScript = new Script(Settings.StartScriptUri);
-			_lexical = new LexicalAnalysis(_currentScript);
-			_currentScript.currentLine = ProcessScript();
+			 scripts.Add(new Script(Settings.StartScriptUri));
+			_lexical = new LexicalAnalysis(scripts[0]);
+			scripts[0].currentLine = ProcessScript(0);
 
 			_backgroundImage.BeginAnimation(OpacityProperty, splashScreenFadeOut);
 		}
@@ -365,6 +369,8 @@ namespace VNet
 			{
 				Settings.inGame = true;
 				Settings.allowProgress = true;
+				currentScriptIndex = 0;
+				scripts[0].currentLine = scripts[0].firstGameplayLine;
 				TriggerNextCommand();
 			}
 		}
@@ -373,19 +379,27 @@ namespace VNet
 		 * Function processes script from start to finish, executing setup commands (creating characters, backgrounds, labels..).
 		 * At the end it sets current position in script to the first non-setup line
 		 */
-		private int ProcessScript()
+		private int ProcessScript(int scriptIndex)
 		{
+			Script oldScriptSource = _lexical.Source;
+			int oldScriptIndex = oldScriptSource.index;
+			currentScriptIndex = scriptIndex;
 			while(true)
 			{
 				string[] command = ProcessScriptLine();
-				if (command == null) return _currentScript.firstGameplayLine;
+				if (command == null)
+				{
+					_lexical.Source = oldScriptSource;
+					currentScriptIndex = oldScriptIndex;
+					return scripts[scriptIndex].firstGameplayLine;
+				}
 				if (Settings.SetupKeywordList.Contains(command[0]))
 				{
 					ExecuteCommand(command, false);
 				}
-				else if (_currentScript.firstGameplayLine == 0)
+				else if (scripts[scriptIndex].firstGameplayLine == 0)
 				{
-					_currentScript.firstGameplayLine = _currentScript.currentLine - 1;
+					scripts[scriptIndex].firstGameplayLine = scripts[scriptIndex].currentLine - 1;
 				}
 			}
 		}
@@ -808,7 +822,14 @@ namespace VNet
 		private void JumpToLabel(string labelName)
 		{
 			Settings.executeNext = true;
-			_currentScript.currentLine = _assets.labels.Find(i => i.name == labelName).lineNumber;
+			Assets.Label label = _assets.labels.Find(i => i.name == labelName);
+			if (label == null)
+			{
+				MessageBox.Show("Label " + labelName + " was not found.");
+				return;
+			}
+			currentScriptIndex = label.scriptIndex;
+			scripts[currentScriptIndex].currentLine = label.lineNumber;
 		}
 
 		/*

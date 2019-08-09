@@ -8,12 +8,14 @@ namespace VNet.Assets
 {
 	public class Label : Asset
 	{
+		public int scriptIndex;
 		public int lineNumber;
 
-		public Label(string name, int lineNum)
+		public Label(string name, int scriptIndex, int lineNumber)
 		{
 			this.name = name;
-			this.lineNumber = lineNum;
+			this.scriptIndex = scriptIndex;
+			this.lineNumber = lineNumber;
 		}
 	}
 }

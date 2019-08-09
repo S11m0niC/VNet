@@ -480,8 +480,9 @@ namespace VNet
 		private void LoadGame(Savegame save)
 		{
 			// Set required gameplay elements
-			_currentScript.currentLine = save.currentScriptLine;
-			_currentScript.currentPositionInLine = 0;
+			currentScriptIndex = save.currentScriptIndex;
+			scripts[currentScriptIndex].currentLine = save.currentScriptLine;
+			scripts[currentScriptIndex].currentPositionInLine = 0;
 			_environment = save.currentEnvironment;
 			_assets.variables = save.currentVariables;
 

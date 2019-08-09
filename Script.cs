@@ -10,6 +10,7 @@ namespace VNet
 	public class Script
 	{
 		public string sourcePath;
+		public int index;
 
 		public int lineCount;
 		public string[] lines;
@@ -21,8 +22,9 @@ namespace VNet
 
 		public Script() { }
 
-		public Script(string srcPath)
+		public Script(string srcPath, int index = 0)
 		{
+			this.index = index;
 			sourcePath = srcPath;
 			lines = File.ReadAllLines(sourcePath);
 

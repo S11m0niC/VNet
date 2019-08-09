@@ -14,15 +14,19 @@ namespace VNet
 	{
 		public GameEnvironment currentEnvironment;
 		public List<Variable> currentVariables;
+
+		public int currentScriptIndex;
 		public int currentScriptLine;
+
 		public DateTime currentTime;
 
 		public Savegame() { }
 
-		public Savegame(GameEnvironment environment, List<Variable> variables, int line)
+		public Savegame(GameEnvironment environment, List<Variable> variables, int index, int line)
 		{
 			currentEnvironment = environment;
 			currentVariables = variables;
+			currentScriptIndex = index;
 			currentScriptLine = line;
 			currentTime = DateTime.Now;
 		}

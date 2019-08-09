@@ -9,7 +9,8 @@ namespace VNet
 	class LexicalAnalysis
 	{
 		private readonly int[,] _automata = new int[8, 256];
-		private Script _source;
+
+		public Script Source { get; set; }
 
 		private const int _StartState = 0;
 		private int _currentState;
@@ -17,7 +18,7 @@ namespace VNet
 
 		public LexicalAnalysis(Script src)
 		{
-			_source = src;
+			Source = src;
 			SetAutomata();
 		}
 
@@ -93,8 +94,8 @@ namespace VNet
 		{
 			get
 			{
-				if (_source.currentPositionInLine >= _source.lineLengths[_source.currentLine]) return -1;
-				char currentChar = _source.lines[_source.currentLine][_source.currentPositionInLine];
+				if (Source.currentPositionInLine >= Source.lineLengths[Source.currentLine]) return -1;
+				char currentChar = Source.lines[Source.currentLine][Source.currentPositionInLine];
 				return _automata[_currentState, currentChar];
 			}
 		}
@@ -139,34 +140,34 @@ namespace VNet
 		public Token GetNextToken()
 		{
 			// If at the end of the script
-			if (_source.currentLine >= _source.lineCount)
+			if (Source.currentLine >= Source.lineCount)
 			{
-				return new Token("", Type.Eof, new Location(_source.currentLine, _source.currentPositionInLine));
+				return new Token("", Type.Eof, new Location(Source.currentLine, Source.currentPositionInLine));
 			}
 
 			_currentState = _StartState;
 			_lexem = "";
 
 			// If at the start of line and new line token was not yet returned
-			if (_source.currentPositionInLine == -1)
+			if (Source.currentPositionInLine == -1)
 			{
-				_source.currentPositionInLine = 0;
-				return new Token("", Type.NewLine, new Location(_source.currentLine, _source.currentPositionInLine));
+				Source.currentPositionInLine = 0;
+				return new Token("", Type.NewLine, new Location(Source.currentLine, Source.currentPositionInLine));
 			}
 
 			// If at the start of line
-			if (_source.currentPositionInLine == 0)
+			if (Source.currentPositionInLine == 0)
 			{
-				_source.lineLengths[_source.currentLine] = _source.lines[_source.currentLine].Length;
+				Source.lineLengths[Source.currentLine] = Source.lines[Source.currentLine].Length;
 				// Skips empty lines
-				while (_source.lineLengths[_source.currentLine] == 0)
+				while (Source.lineLengths[Source.currentLine] == 0)
 				{
-					_source.currentLine++;
-					if (_source.currentLine >= _source.lineCount)
+					Source.currentLine++;
+					if (Source.currentLine >= Source.lineCount)
 					{
-						return new Token("", Type.Eof, new Location(_source.currentLine, _source.currentPositionInLine));
+						return new Token("", Type.Eof, new Location(Source.currentLine, Source.currentPositionInLine));
 					}
-					_source.lineLengths[_source.currentLine] = _source.lines[_source.currentLine].Length;
+					Source.lineLengths[Source.currentLine] = Source.lines[Source.currentLine].Length;
 				}
 			}
 
@@ -176,29 +177,29 @@ namespace VNet
 				if (NextState != -1)
 				{
 					_currentState = NextState;
-					_lexem += _source.lines[_source.currentLine][_source.currentPositionInLine];
+					_lexem += Source.lines[Source.currentLine][Source.currentPositionInLine];
 
 					// More characters to process
-					if (_source.currentPositionInLine < _source.lineLengths[_source.currentLine] - 1)
+					if (Source.currentPositionInLine < Source.lineLengths[Source.currentLine] - 1)
 					{
-						_source.currentPositionInLine++;
+						Source.currentPositionInLine++;
 					}
 					// No more characters to process, at an end state - return appropriate token
 					else if (AtEndState())
 					{
-						int tokenPosInLine = _source.currentPositionInLine - _lexem.Length;
-						int tokenLine = _source.currentLine;
-						_source.currentPositionInLine = -1;
-						_source.currentLine++;
+						int tokenPosInLine = Source.currentPositionInLine - _lexem.Length;
+						int tokenLine = Source.currentLine;
+						Source.currentPositionInLine = -1;
+						Source.currentLine++;
 						return ProcessToken(new Token(_lexem, FindTokenType(), new Location(tokenLine, tokenPosInLine)));
 					}
 					// No more characters to process, not at an end state - return error
 					else
 					{
-						int errorPosInLine = _source.currentPositionInLine - _lexem.Length;
-						int errorLine = _source.currentLine;
-						_source.currentPositionInLine = -1;
-						_source.currentLine++;
+						int errorPosInLine = Source.currentPositionInLine - _lexem.Length;
+						int errorLine = Source.currentLine;
+						Source.currentPositionInLine = -1;
+						Source.currentLine++;
 						return new Token("", Type.LexError, new Location(errorLine, errorPosInLine));
 					}
 				}
@@ -208,10 +209,10 @@ namespace VNet
 					// At an end state, return appropriate token
 					if (AtEndState())
 					{
-						return ProcessToken(new Token(_lexem, FindTokenType(), new Location(_source.currentLine, _source.currentPositionInLine)));
+						return ProcessToken(new Token(_lexem, FindTokenType(), new Location(Source.currentLine, Source.currentPositionInLine)));
 					}
 					// Not at an end state - return error
-					return new Token(_lexem, Type.LexError, new Location(_source.currentLine, _source.currentPositionInLine));
+					return new Token(_lexem, Type.LexError, new Location(Source.currentLine, Source.currentPositionInLine));
 				}
 			}
 		}

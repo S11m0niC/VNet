@@ -17,6 +17,8 @@ namespace VNet
 		 */
 		private string[] ProcessScriptLine()
 		{
+			_lexical.Source = scripts[currentScriptIndex];
+
 			Token token = _lexical.GetNextToken();
 			if (token.Type == Type.Eof) return null;
 			if (token.Type == Type.LexError)
@@ -188,21 +190,13 @@ namespace VNet
 			// Runs function corresponding to the command with the variables given
 			switch (command[0])
 			{
-				case "execute":
-
+				// Setup
+				case "name":
+					Settings.gameName = command[1];
 					break;
 
 				case "label":
-					_assets.CreateLabel(command[2], command[1]);
-					break;
-
-				case "character":
-					if (command[3] != null)
-						_assets.CreateCharacter(command[1], command[2], command[3]);
-					else if (command[2] != null)
-						_assets.CreateCharacter(command[1], command[2]);
-					else
-						_assets.CreateCharacter(command[1]);
+					_assets.CreateLabel(command[2], currentScriptIndex.ToString(), command[1]);
 					break;
 
 				case "image":
@@ -214,6 +208,15 @@ namespace VNet
 					{
 						_assets.AddImageToCharacter(command[1], command[2], command[3]);
 					}
+					break;
+
+				case "character":
+					if (command[3] != null)
+						_assets.CreateCharacter(command[1], command[2], command[3]);
+					else if (command[2] != null)
+						_assets.CreateCharacter(command[1], command[2]);
+					else
+						_assets.CreateCharacter(command[1]);
 					break;
 
 				case "color":
@@ -246,15 +249,94 @@ namespace VNet
 						}
 					}
 					break;
-
-				case "name":
-					Settings.gameName = command[1];
-					break;
-
+				
+				// Script navigation
 				case "jump":
 					JumpToLabel(command[1]);
 					break;
 
+				case "include":
+					scripts.Add(new Script(command[1], scripts.Count));
+					ProcessScript(scripts.Count - 1);
+					break;
+
+				// Graphics
+				case "show":
+					if (command[1] == "choice")
+					{
+						Settings.executeNext = false;
+						ShowChoice(command[2]);
+					}
+					if (command.Contains("pause")) Settings.executeNext = false;
+					// Only parameter is name, therefore show as background
+					if (command[2] == null)
+					{
+						ShowBackground(command[1], 500);
+					}
+					// More parameters, show as character
+					else if (command[2] != null)
+					{
+						if (command[3] != null)
+							ShowCharacter(command[1], command[2], 500, command[3]);
+						else
+							ShowCharacter(command[1], command[2], 500);
+					}
+					break;
+
+				case "clear":
+					if (command.Contains("pause"))
+					{
+						Settings.executeNext = false;
+					}
+
+					if (command[1] == "background")
+					{
+						ClearBackground();
+					}
+					else if (command[1] != null)
+					{
+						ClearCharacters(command[1]);
+					}
+					else
+					{
+						ClearCharacters();
+					}
+					break;
+
+				// Sound
+				case "play":
+					if (command.Contains("pause"))
+					{
+						Settings.executeNext = false;
+					}
+					PlaySound(command[1], Double.TryParse(command[2], NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var volume) ? volume : 1.0, command.Contains("r") || command.Contains("repeat"));
+					break;
+
+				case "stop":
+					if (command.Contains("pause"))
+					{
+						Settings.executeNext = false;
+					}
+					switch (command[1])
+					{
+						case "sound":
+							StopSound(true);
+							break;
+						case "music":
+							StopMusic(true);
+							break;
+						default:
+							StopSound(true);
+							StopMusic(true);
+							break;
+					}
+					break;
+
+				case "save":
+					SaveGame(0);
+					break;
+
+				// Variable manipulation
 				case "int":
 					if (Int32.TryParse(command[2], out intValue))
 					{
@@ -324,80 +406,7 @@ namespace VNet
 					}
 					break;
 
-				case "show":
-					if (command[1] == "choice")
-					{
-						Settings.executeNext = false;
-						ShowChoice(command[2]);
-					}
-					if (command.Contains("pause")) Settings.executeNext = false;
-					// Only parameter is name, therefore show as background
-					if (command[2] == null)
-					{
-						ShowBackground(command[1], 500);
-					}
-					// More parameters, show as character
-					else if (command[2] != null)
-					{
-						if (command[3] != null)
-							ShowCharacter(command[1], command[2], 500, command[3]);
-						else
-							ShowCharacter(command[1], command[2], 500);
-					}
-					break;
-
-				case "clear":
-					if (command.Contains("pause"))
-					{
-						Settings.executeNext = false;
-					}
-
-					if (command[1] == "background")
-					{
-						ClearBackground();
-					}
-					else if (command[1] != null)
-					{
-						ClearCharacters(command[1]);
-					}
-					else
-					{
-						ClearCharacters();
-					}
-					break;
-
-				case "play":
-					if (command.Contains("pause"))
-					{
-						Settings.executeNext = false;
-					}
-					PlaySound(command[1], Double.TryParse(command[2], NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var volume) ? volume : 1.0, command.Contains("r") || command.Contains("repeat"));
-					break;
-
-				case "stop":
-					if (command.Contains("pause"))
-					{
-						Settings.executeNext = false;
-					}
-					switch (command[1])
-					{
-						case "sound":
-							StopSound(true);
-							break;
-						case "music":
-							StopMusic(true);
-							break;
-						default:
-							StopSound(true);
-							StopMusic(true);
-							break;
-					}
-					break;
-
-				case "save":
-					SaveGame(0);
-					break;
-
+				// Text
 				default:
 					if (!afterSave)
 					{
