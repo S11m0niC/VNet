@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Security.RightsManagement;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Serialization;
 
 namespace VNet
 {
@@ -16,11 +18,17 @@ namespace VNet
 		public static readonly string ScriptExtension = "vnets";
 		// Location and name of starting script
 		public static readonly string StartScriptUri = "./scripts/game." + ScriptExtension;
+
 		// Path and names of save files
 		public static string SaveFilePath(int saveFileIndex)
 		{
 			return ".\\saves\\save_" + saveFileIndex.ToString("D2");
-		} 
+		}
+		public static string SettingsFilePath()
+		{
+			return ".\\saves\\settings";
+		}
+
 		// The minimum splash screen time
 		public static readonly int SplashScreenMinimalTimeInMiliseconds = 3000;
 		// List of keywords considered to be "game" words. These are executed during normal gameplay
@@ -57,5 +65,71 @@ namespace VNet
 		 */
 		public static string gameName = "VNet";
 		public static string protagonistName = "";
+
+		/*
+		 * Loads settings from xml file
+		 */
+		public static void LoadSettings()
+		{
+			SettingsSave settingsSave = SettingsSave.DeserializeSettings();
+			settingsSave?.SaveToSettings();
+		}
+	}
+
+	/*
+	 * Non-static class 
+	 */
+	public class SettingsSave
+	{
+		public int textDisplaySpeedInMiliseconds;
+		public double soundVolumeMultiplier;
+		public double musicVolumeMultiplier;
+		public bool colorCharacterNames;
+		public bool colorTextBorders;
+
+		public SettingsSave() { }
+
+		public SettingsSave(bool loadFromSettings)
+		{
+			if (loadFromSettings)
+			{
+				textDisplaySpeedInMiliseconds = Settings.textDisplaySpeedInMiliseconds;
+				soundVolumeMultiplier = Settings.soundVolumeMultiplier;
+				musicVolumeMultiplier = Settings.musicVolumeMultiplier;
+				colorCharacterNames = Settings.colorCharacterNames;
+				colorTextBorders = Settings.colorTextBorders;
+			}
+		}
+
+		public void SaveToSettings()
+		{
+			Settings.textDisplaySpeedInMiliseconds = textDisplaySpeedInMiliseconds;
+			 Settings.soundVolumeMultiplier = soundVolumeMultiplier;
+			 Settings.musicVolumeMultiplier = musicVolumeMultiplier;
+			 Settings.colorCharacterNames = colorCharacterNames;
+			 Settings.colorTextBorders = colorTextBorders;
+		}
+
+		public static SettingsSave DeserializeSettings()
+		{
+			try
+			{
+				SettingsSave save;
+				string saveGameLocation = Settings.SettingsFilePath();
+				XmlSerializer serializer = new XmlSerializer(typeof(SettingsSave));
+				using (StreamReader reader = new StreamReader(saveGameLocation))
+				{
+					save = (SettingsSave)serializer.Deserialize(reader);
+					reader.Close();
+				}
+
+				return save;
+			}
+			// On exception (no save, corrupted save...)
+			catch (Exception)
+			{
+				return null;
+			}
+		}
 	}
 }

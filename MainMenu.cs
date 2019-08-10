@@ -672,6 +672,7 @@ namespace VNet
 			backButton.Content = backTextBlock;
 			backButton.Click += (sender, args) =>
 			{
+				SaveSettings();
 				MainMenu(false);
 			};
 			ViewportContainer.Children.Add(backButton);
@@ -736,6 +737,21 @@ namespace VNet
 			DoubleAnimation blurAnimation = new DoubleAnimation(0.0, 5.0, new Duration(TimeSpan.FromMilliseconds(300)));
 			_backgroundImage.Effect = blur;
 			blur.BeginAnimation(BlurEffect.RadiusProperty, blurAnimation);
+		}
+
+		/*
+		 * Saves settings to an xml file when closing options screen
+		 */
+		private void SaveSettings()
+		{
+			var settingsSave = new SettingsSave(true);
+			string saveLocation = ".\\saves\\settings";
+			XmlSerializer serializer = new XmlSerializer(settingsSave.GetType());
+			using (StreamWriter writer = new StreamWriter(saveLocation))
+			{
+				serializer.Serialize(writer, settingsSave);
+				writer.Close();
+			}
 		}
 	}
 }

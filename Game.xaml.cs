@@ -141,10 +141,14 @@ namespace VNet
 			};
 			splashScreenFadeOut.Completed += SplashScreenFadeOutCompleted;
 
+			// Processing scripts
 			 scripts.Add(new Script(Settings.StartScriptUri));
 			_lexical = new LexicalAnalysis(scripts[0]);
 			scripts[0].currentLine = ProcessScript(0);
 
+			// Load settings
+			Settings.LoadSettings();
+			
 			_backgroundImage.BeginAnimation(OpacityProperty, splashScreenFadeOut);
 		}
 		private void SplashScreenFadeOutCompleted(object sender, EventArgs e)
