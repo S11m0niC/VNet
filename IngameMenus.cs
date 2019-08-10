@@ -37,7 +37,7 @@ namespace VNet
 			TextBlock questionTextBlock = new TextBlock
 			{
 				Name = "questionTextBlock",
-				Text = "Select save slot:",
+				Text = _environment.currentLanguage.UI_saveMenu_instructions,
 				TextAlignment = TextAlignment.Center,
 				FontSize = 21,
 				FontWeight = FontWeights.Bold,
@@ -87,7 +87,7 @@ namespace VNet
 						TextBlock emptySlotText = new TextBlock
 						{
 							Name = "emptySlotText",
-							Text = "* Empty slot *",
+							Text = _environment.currentLanguage.UI_emptySlot,
 							FontSize = 21,
 							FontWeight = FontWeights.Bold
 						};
@@ -158,7 +158,7 @@ namespace VNet
 			TextBlock cancelTextBlock = new TextBlock
 			{
 				Name = "cancelTextBlock",
-				Text = "Cancel",
+				Text = _environment.currentLanguage.UI_cancel,
 				FontSize = 21,
 				FontWeight = FontWeights.Bold
 			};
@@ -218,7 +218,7 @@ namespace VNet
 			TextBlock questionTextBlock = new TextBlock
 			{
 				Name = "questionTextBlock",
-				Text = "Overwrite save game?",
+				Text = _environment.currentLanguage.UI_saveMenu_overwriteInstructions,
 				TextAlignment = TextAlignment.Center,
 				FontSize = 21,
 				FontWeight = FontWeights.Bold,
@@ -230,7 +230,7 @@ namespace VNet
 			TextBlock overwriteTextBlock = new TextBlock
 			{
 				Name = "overwriteTextBlock",
-				Text = "Overwrite",
+				Text = _environment.currentLanguage.UI_saveMenu_overwrite,
 				FontSize = 21,
 				FontWeight = FontWeights.Bold
 			};
@@ -239,7 +239,7 @@ namespace VNet
 			TextBlock cancelTextBlock = new TextBlock
 			{
 				Name = "cancelTextBlock",
-				Text = "Cancel",
+				Text = _environment.currentLanguage.UI_cancel,
 				FontSize = 21,
 				FontWeight = FontWeights.Bold
 			};
@@ -365,7 +365,7 @@ namespace VNet
 			TextBlock questionTextBlock = new TextBlock
 			{
 				Name = "questionTextBlock",
-				Text = "Exit game?\n(Unsaved progress will be lost)",
+				Text = _environment.currentLanguage.UI_exitGame_instructions,
 				TextAlignment = TextAlignment.Center,
 				FontSize = 21,
 				FontWeight = FontWeights.Bold,
@@ -377,7 +377,7 @@ namespace VNet
 			TextBlock exitTextBlock = new TextBlock
 			{
 				Name = "exitTextBlock",
-				Text = "Exit",
+				Text = _environment.currentLanguage.UI_exitGame_exit,
 				FontSize = 21,
 				FontWeight = FontWeights.Bold
 			};
@@ -386,7 +386,7 @@ namespace VNet
 			TextBlock cancelTextBlock = new TextBlock
 			{
 				Name = "cancelTextBlock",
-				Text = "Cancel",
+				Text = _environment.currentLanguage.UI_cancel,
 				FontSize = 21,
 				FontWeight = FontWeights.Bold
 			};
@@ -479,7 +479,7 @@ namespace VNet
 			TextBlock questionTextBlock = new TextBlock
 			{
 				Name = "questionTextBlock",
-				Text = "Return to main menu?\n(Unsaved progress will be lost)",
+				Text = _environment.currentLanguage.UI_returnToMenu_instructions,
 				TextAlignment = TextAlignment.Center,
 				FontSize = 21,
 				FontWeight = FontWeights.Bold,
@@ -491,7 +491,7 @@ namespace VNet
 			TextBlock menuTextBlock = new TextBlock
 			{
 				Name = "menuTextBlock",
-				Text = "Return",
+				Text = _environment.currentLanguage.UI_returnToMenu_return,
 				FontSize = 21,
 				FontWeight = FontWeights.Bold
 			};
@@ -500,7 +500,7 @@ namespace VNet
 			TextBlock cancelTextBlock = new TextBlock
 			{
 				Name = "cancelTextBlock",
-				Text = "Cancel",
+				Text = _environment.currentLanguage.UI_cancel,
 				FontSize = 21,
 				FontWeight = FontWeights.Bold
 			};

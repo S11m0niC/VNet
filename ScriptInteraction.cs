@@ -16,7 +16,7 @@ namespace VNet
 		/*
 		 * Function processes next line in current script and returns list of commands and arguments from that line
 		 */
-		private List<string> ProcessScriptLine()
+		public List<string> ProcessScriptLine()
 		{
 			_lexical.Source = scripts[currentScriptIndex];
 
@@ -425,6 +425,7 @@ namespace VNet
 						if (command[1] == "game")
 						{
 							Settings.gameName = command[2];
+							this.Title = command[2];
 						}
 						else if (command[1] == "protagonist")
 						{

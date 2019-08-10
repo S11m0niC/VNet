@@ -48,6 +48,9 @@ namespace VNet
 		public double currentSoundVolume;
 
 		[XmlIgnore]
+		public UILanguage currentLanguage;
+
+		[XmlIgnore]
 		public List<string> choiceButtonNames;
 		[XmlIgnore]
 		public List<string> temporaryUIlayer1;

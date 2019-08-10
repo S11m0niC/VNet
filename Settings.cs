@@ -37,7 +37,8 @@ namespace VNet
 		public static readonly List<string> SetupAndGameKeywordList = new List<string>{"name"};
 		// List of keywords considered to be "setup" words. These are executed when launching the game
 		public static readonly List<string> SetupKeywordList = new List<string> {"include", "label", "character", "image", "color", "sound", "music", "choice"};
-
+		// List of supported language initials
+		public static readonly List<string> LanguageInitialList = new List<string> {"EN", "SI"};
 		/*
 		 * Global variables which change at runtime
 		 */
@@ -59,6 +60,7 @@ namespace VNet
 		public static double musicVolumeMultiplier = 1.0;
 		public static bool colorCharacterNames = false;
 		public static bool colorTextBorders = true;
+		public static string language = "SI";
 
 		/*
 		 * Settings adjusted in script
@@ -86,6 +88,7 @@ namespace VNet
 		public double musicVolumeMultiplier;
 		public bool colorCharacterNames;
 		public bool colorTextBorders;
+		public string language;
 
 		public SettingsSave() { }
 
@@ -98,6 +101,7 @@ namespace VNet
 				musicVolumeMultiplier = Settings.musicVolumeMultiplier;
 				colorCharacterNames = Settings.colorCharacterNames;
 				colorTextBorders = Settings.colorTextBorders;
+				language = Settings.language;
 			}
 		}
 
@@ -108,6 +112,7 @@ namespace VNet
 			 Settings.musicVolumeMultiplier = musicVolumeMultiplier;
 			 Settings.colorCharacterNames = colorCharacterNames;
 			 Settings.colorTextBorders = colorTextBorders;
+			 Settings.language = language;
 		}
 
 		public static SettingsSave DeserializeSettings()

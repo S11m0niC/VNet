@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace VNet
 {
-	class LexicalAnalysis
+	public class LexicalAnalysis
 	{
 		private readonly int[,] _automata = new int[8, 256];
 
@@ -187,6 +187,7 @@ namespace VNet
 					// No more characters to process, at an end state - return appropriate token
 					else if (AtEndState())
 					{
+						Source.currentPositionInLine++;
 						int tokenPosInLine = Source.currentPositionInLine - _lexem.Length;
 						int tokenLine = Source.currentLine;
 						Source.currentPositionInLine = -1;
@@ -196,6 +197,7 @@ namespace VNet
 					// No more characters to process, not at an end state - return error
 					else
 					{
+						Source.currentPositionInLine++;
 						int errorPosInLine = Source.currentPositionInLine - _lexem.Length;
 						int errorLine = Source.currentLine;
 						Source.currentPositionInLine = -1;
@@ -209,7 +211,7 @@ namespace VNet
 					// At an end state, return appropriate token
 					if (AtEndState())
 					{
-						return ProcessToken(new Token(_lexem, FindTokenType(), new Location(Source.currentLine, Source.currentPositionInLine)));
+						return ProcessToken(new Token(_lexem, FindTokenType(), new Location(Source.currentLine, Source.currentPositionInLine - _lexem.Length)));
 					}
 					// Not at an end state - return error
 					return new Token(_lexem, Type.LexError, new Location(Source.currentLine, Source.currentPositionInLine));

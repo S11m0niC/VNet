@@ -52,7 +52,7 @@ namespace VNet
 				TextBlock continueTextBlock = new TextBlock
 				{
 					Name = "continueTextBlock",
-					Text = "Continue",
+					Text = _environment.currentLanguage.UI_mainMenu_continue,
 					FontSize = 20,
 					FontWeight = FontWeights.Bold,
 					Foreground = new SolidColorBrush(Colors.White)
@@ -78,7 +78,7 @@ namespace VNet
 			TextBlock newGameTextBlock = new TextBlock
 			{
 				Name = "newGameTextBlock",
-				Text = "New Game",
+				Text = _environment.currentLanguage.UI_mainMenu_newGame,
 				FontSize = 20,
 				FontWeight = FontWeights.Bold,
 				Foreground = new SolidColorBrush(Colors.White)
@@ -100,7 +100,7 @@ namespace VNet
 			TextBlock loadGameTextBlock = new TextBlock
 			{
 				Name = "loadGameTextBlock",
-				Text = "Load Game",
+				Text = _environment.currentLanguage.UI_mainMenu_loadGame,
 				FontSize = 20,
 				FontWeight = FontWeights.Bold,
 				Foreground = new SolidColorBrush(Colors.White)
@@ -122,7 +122,7 @@ namespace VNet
 			TextBlock optionsTextBlock = new TextBlock
 			{
 				Name = "optionsTextBlock",
-				Text = "Options",
+				Text = _environment.currentLanguage.UI_mainMenu_options,
 				FontSize = 20,
 				FontWeight = FontWeights.Bold,
 				Foreground = new SolidColorBrush(Colors.White)
@@ -144,7 +144,7 @@ namespace VNet
 			TextBlock exitTextBlock = new TextBlock
 			{
 				Name = "exitTextBlock",
-				Text = "Exit",
+				Text = _environment.currentLanguage.UI_mainMenu_exit,
 				FontSize = 20,
 				FontWeight = FontWeights.Bold,
 				Foreground = new SolidColorBrush(Colors.White)
@@ -155,6 +155,35 @@ namespace VNet
 			Canvas.SetLeft(exitButton, 100);
 			Canvas.SetTop(exitButton, 520);
 			Panel.SetZIndex(exitButton, 2);
+
+			Button languageButton = new Button
+			{
+				Name = "languageButton",
+				Width = 48,
+				Height = 48,
+				Background = new SolidColorBrush(Color.FromArgb(192, 16, 16, 16))
+			};
+			TextBlock languageTextBlock = new TextBlock
+			{
+				Name = "languageTextBlock",
+				Text = _environment.currentLanguage.initial,
+				FontSize = 20,
+				FontWeight = FontWeights.ExtraBold,
+				Foreground = new SolidColorBrush(Colors.White)
+			};
+			languageButton.Content = languageTextBlock;
+			languageButton.Click += (sender, args) =>
+			{
+				int langIndex = Settings.LanguageInitialList.FindIndex(s => s == Settings.language);
+				Settings.language = langIndex == Settings.LanguageInitialList.Count - 1 ? Settings.LanguageInitialList[0] : Settings.LanguageInitialList[langIndex + 1];
+				_environment.currentLanguage = UILanguage.createLanguage(Settings.language);
+				MainMenu(false);
+				SaveSettings();
+			};
+			ViewportContainer.Children.Add(languageButton);
+			Canvas.SetLeft(languageButton, 1202);
+			Canvas.SetTop(languageButton, 622);
+			Panel.SetZIndex(languageButton, 2);
 
 			// Menu background image and music
 			if (restartBackgroundAndMusic)
@@ -223,7 +252,7 @@ namespace VNet
 			TextBlock questionTextBlock = new TextBlock
 			{
 				Name = "questionTextBlock",
-				Text = Settings.deleteGamesOnLoadScreen ? "Select slot to delete:" : "Select slot to load:",
+				Text = Settings.deleteGamesOnLoadScreen ? _environment.currentLanguage.UI_loadMenu_deleteInstructions : _environment.currentLanguage.UI_loadMenu_loadInstructions,
 				TextAlignment = TextAlignment.Center,
 				FontSize = 21,
 				FontWeight = FontWeights.Bold,
@@ -269,7 +298,7 @@ namespace VNet
 						TextBlock emptySlotText = new TextBlock
 						{
 							Name = "emptySlotText",
-							Text = "* Empty slot *",
+							Text = _environment.currentLanguage.UI_emptySlot,
 							FontSize = 21,
 							FontWeight = FontWeights.Bold
 						};
@@ -280,7 +309,7 @@ namespace VNet
 						TextBlock emptySlotText = new TextBlock
 						{
 							Name = "emptySlotText",
-							Text = "* Empty slot *",
+							Text = _environment.currentLanguage.UI_emptySlot,
 							FontSize = 21,
 							FontWeight = FontWeights.Bold
 						};
@@ -350,7 +379,7 @@ namespace VNet
 				Name = "changeModeTextBlock",
 				FontSize = 21,
 				FontWeight = FontWeights.Bold,
-				Text = Settings.deleteGamesOnLoadScreen ? "Load" : "Delete"
+				Text = Settings.deleteGamesOnLoadScreen ? _environment.currentLanguage.UI_loadMenu_load : _environment.currentLanguage.UI_loadMenu_delete
 			};
 
 			Button changeModeButton = new Button
@@ -372,7 +401,7 @@ namespace VNet
 			TextBlock cancelTextBlock = new TextBlock
 			{
 				Name = "cancelTextBlock",
-				Text = "Cancel",
+				Text = _environment.currentLanguage.UI_cancel,
 				FontSize = 21,
 				FontWeight = FontWeights.Bold
 			};
@@ -543,7 +572,7 @@ namespace VNet
 			TextBlock optionsTextBlock = new TextBlock
 			{
 				Name = "gameNameTextBlock",
-				Text = "Options",
+				Text = _environment.currentLanguage.UI_mainMenu_options,
 				FontSize = 48,
 				FontWeight = FontWeights.Bold,
 				Foreground = new SolidColorBrush(Colors.AliceBlue)
@@ -557,7 +586,7 @@ namespace VNet
 			TextBlock textSpeedTextBlock = new TextBlock
 			{
 				Name = "textSpeedTextBlock",
-				Text = "Text speed",
+				Text = _environment.currentLanguage.UI_options_textSpeed,
 				FontSize = 20,
 				FontWeight = FontWeights.Bold,
 				Foreground = new SolidColorBrush(Colors.White)
@@ -590,7 +619,7 @@ namespace VNet
 			TextBlock musicVolumeTextBlock = new TextBlock
 			{
 				Name = "musicVolumeTextBlock",
-				Text = "Music volume",
+				Text = _environment.currentLanguage.UI_options_musicVolume,
 				FontSize = 20,
 				FontWeight = FontWeights.Bold,
 				Foreground = new SolidColorBrush(Colors.White)
@@ -624,7 +653,7 @@ namespace VNet
 			TextBlock soundVolumeTextBlock = new TextBlock
 			{
 				Name = "soundVolumeTextBlock",
-				Text = "Sound effects volume",
+				Text = _environment.currentLanguage.UI_options_soundVolume,
 				FontSize = 20,
 				FontWeight = FontWeights.Bold,
 				Foreground = new SolidColorBrush(Colors.White)
@@ -664,7 +693,7 @@ namespace VNet
 			TextBlock backTextBlock = new TextBlock
 			{
 				Name = "backTextBlock",
-				Text = "Back",
+				Text = _environment.currentLanguage.UI_back,
 				FontSize = 20,
 				FontWeight = FontWeights.Bold,
 				Foreground = new SolidColorBrush(Colors.White)
@@ -684,7 +713,7 @@ namespace VNet
 			TextBlock colorNamesTextBlock = new TextBlock
 			{
 				Name = "colorNamesTextBlock",
-				Text = "Color character names",
+				Text = _environment.currentLanguage.UI_options_colorNames,
 				FontSize = 20,
 				FontWeight = FontWeights.Bold,
 				Foreground = new SolidColorBrush(Colors.White)
@@ -710,7 +739,7 @@ namespace VNet
 			TextBlock colorBordersTextBlock = new TextBlock
 			{
 				Name = "colorBordersTextBlock",
-				Text = "Color text borders",
+				Text = _environment.currentLanguage.UI_options_colorBorders,
 				FontSize = 20,
 				FontWeight = FontWeights.Bold,
 				Foreground = new SolidColorBrush(Colors.White)

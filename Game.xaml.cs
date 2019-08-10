@@ -148,7 +148,11 @@ namespace VNet
 
 			// Load settings
 			Settings.LoadSettings();
+
+			// Load language
+			_environment.currentLanguage = UILanguage.createLanguage(Settings.language);
 			
+			// Begin splash fade out animation
 			_backgroundImage.BeginAnimation(OpacityProperty, splashScreenFadeOut);
 		}
 		private void SplashScreenFadeOutCompleted(object sender, EventArgs e)

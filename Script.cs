@@ -39,5 +39,15 @@ namespace VNet
 			currentPositionInLine = 0;
 			firstGameplayLine = 0;
 		}
+
+		public void ComputeLineLengths()
+		{
+			lineCount = lines.Length;
+			lineLengths = new int[lineCount];
+			for (int i = 0; i < lineCount; i++)
+			{
+				lineLengths[i] = lines[i].Length;
+			}
+		}
 	}
 }
