@@ -513,6 +513,7 @@ namespace VNet
 			scripts[currentScriptIndex].currentLine = save.currentScriptLine;
 			scripts[currentScriptIndex].currentPositionInLine = 0;
 			_environment = save.currentEnvironment;
+			_environment.currentLanguage = UILanguage.createLanguage(Settings.language);
 			_assets.variables = save.currentVariables;
 
 			// Start game

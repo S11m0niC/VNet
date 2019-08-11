@@ -46,6 +46,9 @@ namespace VNet
 		private Border _textBlockBorder;
 		private Border _nameBlockBorder;
 		private Border _buttonBorder;
+		private Button _saveButton;
+		private Button _menuButton;
+		private Button _exitButton;
 
 		private Image _blackBackgroundConstant;
 		private Image _backgroundImage;
@@ -276,7 +279,7 @@ namespace VNet
 			ViewportContainer.Children.Add(_nameBlockBorder);
 			Canvas.SetLeft(_nameBlockBorder, 0);
 			Canvas.SetTop(_nameBlockBorder, 560);
-			Panel.SetZIndex(_nameBlockBorder, 3);
+			Panel.SetZIndex(_nameBlockBorder, 4);
 
 			_textBlock = new TextBlock
 			{
@@ -299,7 +302,7 @@ namespace VNet
 			ViewportContainer.Children.Add(_textBlockBorder);
 			Canvas.SetLeft(_textBlockBorder, 0);
 			Canvas.SetTop(_textBlockBorder, 600);
-			Panel.SetZIndex(_textBlockBorder, 3);
+			Panel.SetZIndex(_textBlockBorder, 4);
 
 			_textTimer = new DispatcherTimer
 			{
@@ -313,7 +316,7 @@ namespace VNet
 				Orientation = Orientation.Horizontal
 			};
 
-			Button saveButton = new Button
+			_saveButton = new Button
 			{
 				Name = "saveButton",
 				Width = 30,
@@ -325,11 +328,11 @@ namespace VNet
 			{
 				Source = new BitmapImage(new Uri(_assets.ConvertToAbsolutePath(".\\assets\\icons\\saveIcon.png"), UriKind.Absolute))
 			};
-			saveButton.Content = saveIcon;
-			saveButton.Click += SaveButtonOnClick;
-			buttonPanel.Children.Add(saveButton);
+			_saveButton.Content = saveIcon;
+			_saveButton.Click += SaveButtonOnClick;
+			buttonPanel.Children.Add(_saveButton);
 
-			Button menuButton = new Button
+			_menuButton = new Button
 			{
 				Name = "menuButton",
 				Width = 30,
@@ -341,11 +344,11 @@ namespace VNet
 			{
 				Source = new BitmapImage(new Uri(_assets.ConvertToAbsolutePath(".\\assets\\icons\\menuIcon.png"), UriKind.Absolute))
 			};
-			menuButton.Content = menuIcon;
-			menuButton.Click += MenuButtonOnClick;
-			buttonPanel.Children.Add(menuButton);
+			_menuButton.Content = menuIcon;
+			_menuButton.Click += MenuButtonOnClick;
+			buttonPanel.Children.Add(_menuButton);
 
-			Button exitButton = new Button
+			_exitButton = new Button
 			{
 				Name = "exitButton",
 				Width = 30,
@@ -357,9 +360,9 @@ namespace VNet
 			{
 				Source = new BitmapImage(new Uri(_assets.ConvertToAbsolutePath(".\\assets\\icons\\exitIcon.png"), UriKind.Absolute))
 			};
-			exitButton.Content = exitIcon;
-			exitButton.Click += ExitButtonOnClick;
-			buttonPanel.Children.Add(exitButton);
+			_exitButton.Content = exitIcon;
+			_exitButton.Click += ExitButtonOnClick;
+			buttonPanel.Children.Add(_exitButton);
 
 			_buttonBorder = new Border
 			{
@@ -371,8 +374,9 @@ namespace VNet
 			ViewportContainer.Children.Add(_buttonBorder);
 			Canvas.SetLeft(_buttonBorder, 1111);
 			Canvas.SetTop(_buttonBorder, 547);
-			Panel.SetZIndex(_buttonBorder, 3);
+			Panel.SetZIndex(_buttonBorder, 4);
 
+			Settings.UIvisible = true;
 			if (newGame)
 			{
 				Settings.inGame = true;
@@ -454,10 +458,29 @@ namespace VNet
 		/*
 		 * Clears the background. This shows the default black background element, but the original background UI element remains as it is constant.
 		 */
-		private void ClearBackground()
+		private void ClearBackground(int fadeDuration)
 		{
 			_environment.currentBackgroundName = null;
-			_backgroundImage.Source = null;
+
+			if (fadeDuration > 0)
+			{
+				_fadeOut = new DoubleAnimation
+				{
+					From = 1,
+					To = 0,
+					Duration = new Duration(TimeSpan.FromMilliseconds(fadeDuration)),
+				};
+				_fadeOut.Completed += (sender, args) =>
+				{
+					_backgroundImage.Source = null;
+				};
+
+				_backgroundImage.BeginAnimation(OpacityProperty, _fadeOut);
+			}
+			else
+			{
+				_backgroundImage.Source = null;
+			}
 		}
 
 		/*
@@ -490,6 +513,7 @@ namespace VNet
 				xOffset = 0;
 				yOffset = 0;
 				_leftCharacter.Source = new BitmapImage(selectedMood.imageUri);
+				_leftCharacter.Opacity = 0;
 				_leftCharacter.BeginAnimation(OpacityProperty, _fadeIn);
 				Canvas.SetLeft(_leftCharacter, xOffset);
 				Canvas.SetTop(_leftCharacter, yOffset);
@@ -500,6 +524,7 @@ namespace VNet
 				_environment.rightCharacterMood = selectedMood.name;
 				xOffset = 760;
 				yOffset = 0;
+				_rightCharacter.Opacity = 0;
 				_rightCharacter.Source = new BitmapImage(selectedMood.imageUri);
 				_rightCharacter.BeginAnimation(OpacityProperty, _fadeIn);
 				Canvas.SetLeft(_rightCharacter, xOffset);
@@ -511,6 +536,7 @@ namespace VNet
 				_environment.centerCharacterMood = selectedMood.name;
 				xOffset = 380;
 				yOffset = 0;
+				_centerCharacter.Opacity = 0;
 				_centerCharacter.Source = new BitmapImage(selectedMood.imageUri);
 				_centerCharacter.BeginAnimation(OpacityProperty, _fadeIn);
 				Canvas.SetLeft(_centerCharacter, xOffset);
@@ -520,48 +546,129 @@ namespace VNet
 		}
 
 		/*
-		 * Function clears the image of character specified in argument; if no character is specified clears all characters
+		 * Function clears the image of character specified in argument; if no character is specified clears all characters.
+		 * If fade out is specified, starts the fade out animation.
 		 */
-		private void ClearCharacters(string position = "")
+		private void ClearCharacters(int fadeDuration, string position = "")
 		{
-			if (position == "left" && _environment.leftCharacterName != null)
+			// Use animation
+			if (fadeDuration > 0)
 			{
-				_leftCharacter.Source = null;
-				_environment.leftCharacterName = null;
-				_environment.leftCharacterMood = null;
+				_fadeOut = new DoubleAnimation
+				{
+					Name = position,
+					From = 1,
+					To = 0,
+					Duration = new Duration(TimeSpan.FromMilliseconds(fadeDuration)),
+				};
+				_fadeOut.Completed += (sender, args) =>
+				{
+					DoubleAnimation anim = (DoubleAnimation) sender;
+					string pos = anim.Name;
+					if (pos == "")
+					{
+						_leftCharacter.Source = null;
+						_centerCharacter.Source = null;
+						_rightCharacter.Source = null;
+					}
+					else if (pos == "left")
+					{
+						_leftCharacter.Source = null;
+					}
+					else if (pos == "right")
+					{
+						_rightCharacter.Source = null;
+					}
+					else
+					{
+						_centerCharacter.Source = null;
+					}
+				};
 
+				if (position == "left" && _environment.leftCharacterName != null)
+				{
+					_leftCharacter.BeginAnimation(OpacityProperty, _fadeOut);
+					_environment.leftCharacterName = null;
+					_environment.leftCharacterMood = null;
+
+				}
+				else if (position == "center" && _environment.centerCharacterName != null)
+				{
+					_centerCharacter.BeginAnimation(OpacityProperty, _fadeOut);
+					_environment.centerCharacterName = null;
+					_environment.centerCharacterMood = null;
+				}
+				else if (position == "right" && _environment.rightCharacterName != null)
+				{
+					_rightCharacter.BeginAnimation(OpacityProperty, _fadeOut);
+					_environment.rightCharacterName = null;
+					_environment.rightCharacterMood = null;
+				}
+				else
+				{
+					if (_environment.leftCharacterName != null)
+					{
+						_leftCharacter.BeginAnimation(OpacityProperty, _fadeOut);
+						_environment.leftCharacterName = null;
+						_environment.leftCharacterMood = null;
+					}
+					if (_environment.centerCharacterName != null)
+					{
+						_centerCharacter.BeginAnimation(OpacityProperty, _fadeOut);
+						_environment.centerCharacterName = null;
+						_environment.centerCharacterMood = null;
+					}
+					if (_environment.rightCharacterName != null)
+					{
+						_rightCharacter.BeginAnimation(OpacityProperty, _fadeOut);
+						_environment.rightCharacterName = null;
+						_environment.rightCharacterMood = null;
+					}
+				}
 			}
-			else if (position == "center" && _environment.centerCharacterName != null)
-			{
-				_centerCharacter.Source = null;
-				_environment.centerCharacterName = null;
-				_environment.centerCharacterMood = null;
-			}
-			else if (position == "right" && _environment.rightCharacterName != null)
-			{
-				_rightCharacter.Source = null;
-				_environment.rightCharacterName = null;
-				_environment.rightCharacterMood = null;
-			}
+
+			// Do not use animation
 			else
 			{
-				if (_environment.leftCharacterName != null)
+				if (position == "left" && _environment.leftCharacterName != null)
 				{
 					_leftCharacter.Source = null;
 					_environment.leftCharacterName = null;
 					_environment.leftCharacterMood = null;
+
 				}
-				if (_environment.centerCharacterName != null)
+				else if (position == "center" && _environment.centerCharacterName != null)
 				{
 					_centerCharacter.Source = null;
 					_environment.centerCharacterName = null;
 					_environment.centerCharacterMood = null;
 				}
-				if (_environment.rightCharacterName != null)
+				else if (position == "right" && _environment.rightCharacterName != null)
 				{
 					_rightCharacter.Source = null;
 					_environment.rightCharacterName = null;
 					_environment.rightCharacterMood = null;
+				}
+				else
+				{
+					if (_environment.leftCharacterName != null)
+					{
+						_leftCharacter.Source = null;
+						_environment.leftCharacterName = null;
+						_environment.leftCharacterMood = null;
+					}
+					if (_environment.centerCharacterName != null)
+					{
+						_centerCharacter.Source = null;
+						_environment.centerCharacterName = null;
+						_environment.centerCharacterMood = null;
+					}
+					if (_environment.rightCharacterName != null)
+					{
+						_rightCharacter.Source = null;
+						_environment.rightCharacterName = null;
+						_environment.rightCharacterMood = null;
+					}
 				}
 			}
 		}
@@ -670,13 +777,13 @@ namespace VNet
 		/*
 		 * Checks if requested sound is an effect or song and plays in in appropriate sound player. If sound and song have the same name the sound takes precedence.
 		 */
-		private void PlaySound(string soundName, double volume, bool repeat = false)
+		private bool PlaySound(string soundName, double volume, bool repeat = false)
 		{
 			var snd = _assets.sounds.Find(i => i.name == soundName);
 			if (snd == null)
 			{
 				snd = _assets.music.Find(i => i.name == soundName);
-				if (snd == null) return;
+				if (snd == null) return false;
 				_environment.currentSongName = snd.name;
 				_backgroundMusicPlayer.Open(new Uri(snd.location));
 				if (repeat)
@@ -694,7 +801,7 @@ namespace VNet
 				_backgroundMusicPlayer.Volume = volume * Settings.musicVolumeMultiplier;
 				_environment.currentSongVolume = volume;
 				_backgroundMusicPlayer.Play();
-				return;
+				return true;
 			}
 			_environment.currentSoundName = snd.name;
 			_soundEffectPlayer.Open(new Uri(snd.location));
@@ -713,6 +820,7 @@ namespace VNet
 			_soundEffectPlayer.Volume = volume * Settings.soundVolumeMultiplier;
 			_environment.currentSoundVolume = volume;
 			_soundEffectPlayer.Play();
+			return true;
 		}
 		private void RepeatPlayback(object sender, EventArgs e)
 		{
@@ -755,6 +863,49 @@ namespace VNet
 				_environment.currentSongName = null;
 				_environment.currentSongRepeating = false;
 			}
+		}
+
+		/*
+		 * Creates media player and plays requested video covering whole window
+		 */
+		private bool PlayVideo(string name, double volume, bool allowProgress)
+		{
+			if (allowProgress)
+			{
+				Settings.allowProgress = true;
+			}
+			else
+			{
+				Settings.allowProgress = false;
+			}
+
+			var video = _assets.videos.Find(vid => vid.name == name);
+			if (video == null) return false;
+			MediaElement videoPlayer = new MediaElement
+			{
+				Name = "videoPlayer",
+				Source = new Uri(video.location),
+				LoadedBehavior = MediaState.Manual,
+				Height = Settings.windowHeight,
+				Width = Settings.windowWidth
+			};
+			ViewportContainer.Children.Add(videoPlayer);
+			Canvas.SetLeft(videoPlayer, 0);
+			Canvas.SetTop(videoPlayer, 0);
+			Panel.SetZIndex(videoPlayer, 3);
+			_environment.temporaryUIlayer1.Add("videoPlayer");
+
+			videoPlayer.Play();
+			videoPlayer.MediaEnded += (sender, args) =>
+			{
+				videoPlayer.Stop();
+				if (Settings.allowProgress == false)
+				{
+					Settings.allowProgress = true;
+				}
+				ClearTemporaryUiElements(1);
+			};
+			return true;
 		}
 
 		/*
@@ -832,6 +983,49 @@ namespace VNet
 		}
 
 		/*
+		 * Shows or hides UI elements ingame
+		 */
+		private void ManipulateUI(bool showUI)
+		{
+			try
+			{
+				if (!showUI)
+				{
+					_nameBlock.Visibility = Visibility.Hidden;
+					_textBlock.Visibility = Visibility.Hidden;
+					_nameBlockBorder.Visibility = Visibility.Hidden;
+					_textBlockBorder.Visibility = Visibility.Hidden;
+					_buttonBorder.Visibility = Visibility.Hidden;
+					_saveButton.Visibility = Visibility.Hidden;
+					_saveButton.IsEnabled = false;
+					_menuButton.Visibility = Visibility.Hidden;
+					_menuButton.IsEnabled = false;
+					_exitButton.Visibility = Visibility.Hidden;
+					_exitButton.IsEnabled = false;
+					Settings.UIvisible = false;
+				}
+				else
+				{
+					_nameBlock.Visibility = Visibility.Visible;
+					_textBlock.Visibility = Visibility.Visible;
+					_nameBlockBorder.Visibility = Visibility.Visible;
+					_textBlockBorder.Visibility = Visibility.Visible;
+					_buttonBorder.Visibility = Visibility.Visible;
+					_saveButton.Visibility = Visibility.Visible;
+					_saveButton.IsEnabled = true;
+					_menuButton.Visibility = Visibility.Visible;
+					_menuButton.IsEnabled = true;
+					_exitButton.Visibility = Visibility.Visible;
+					_exitButton.IsEnabled = true;
+					Settings.UIvisible = true;
+				}
+			}
+			catch (Exception)
+			{
+			}
+		}
+
+		/*
 		 * Executes next line of script. Can execute multiple lines if they are non-stopping
 		 */
 		private void TriggerNextCommand()
@@ -873,6 +1067,15 @@ namespace VNet
 			}
 			// If text is displayed completely
 			TriggerNextCommand();
+		}
+
+		private void Game_OnMouseRightButtonUp(object sender, MouseButtonEventArgs e)
+		{
+			if (!Settings.inGame)
+			{
+				return;
+			}
+			ManipulateUI(!Settings.UIvisible);
 		}
 	}
 }

@@ -32,11 +32,11 @@ namespace VNet
 		// The minimum splash screen time
 		public static readonly int SplashScreenMinimalTimeInMiliseconds = 3000;
 		// List of keywords considered to be "game" words. These are executed during normal gameplay
-		public static readonly List<string> GameKeywordList = new List<string> {"jump", "show", "clear", "play", "stop", "ui", "int", "bool", "if", "add", "subtract", "set" };
+		public static readonly List<string> GameKeywordList = new List<string> {"jump", "show", "clear", "play", "stop", "ui", "int", "bool", "if", "add", "subtract", "set", "save" };
 		// List of keywords considered to be both "setup" and "game". These are executed both at launch and during gameplay
 		public static readonly List<string> SetupAndGameKeywordList = new List<string>{"name"};
 		// List of keywords considered to be "setup" words. These are executed when launching the game
-		public static readonly List<string> SetupKeywordList = new List<string> {"include", "label", "character", "image", "color", "sound", "music", "choice"};
+		public static readonly List<string> SetupKeywordList = new List<string> {"include", "label", "character", "image", "color", "sound", "music", "video", "choice"};
 		// List of supported language initials
 		public static readonly List<string> LanguageInitialList = new List<string> {"EN", "SI"};
 		/*
@@ -47,6 +47,7 @@ namespace VNet
 		public static bool textDisplayedFully;
 		public static bool executeNext;
 		public static bool inGame;
+		public static bool UIvisible;
 		public static bool allowProgress;
 		public static bool deleteGamesOnLoadScreen;
 		public static int deletedSaveSlot;

@@ -18,6 +18,7 @@ namespace VNet.Assets
 		public List<Character> characters;
 		public List<Sound> sounds;
 		public List<Sound> music;
+		public List<Video> videos;
 		public List<Choice> choices;
 		public List<Variable> variables;
 
@@ -28,6 +29,7 @@ namespace VNet.Assets
 			characters = new List<Character>();
 			sounds = new List<Sound>();
 			music = new List<Sound>();
+			videos = new List<Video>();
 			choices = new List<Choice>();
 			variables = new List<Variable>();
 		}
@@ -170,7 +172,6 @@ namespace VNet.Assets
 			{
 				MessageBox.Show("Error when creating sound " + name + "!\n\n" + e.Message);
 			}
-			
 		}
 
 		public void CreateVariable(string name, int value)
@@ -212,6 +213,19 @@ namespace VNet.Assets
 			if (var is Integer integer)
 			{
 				integer.value = value;
+			}
+		}
+
+		public void CreateVideo(string name, string path)
+		{
+			try
+			{
+				Video vid = new Video(name, ConvertToAbsolutePath(path));
+				videos.Add(vid);
+			}
+			catch (Exception e)
+			{
+				MessageBox.Show("Error when creating video " + name + "!\n\n" + e.Message);
 			}
 		}
 

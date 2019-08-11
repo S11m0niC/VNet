@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Input;
 using VNet.Assets;
 using Boolean = System.Boolean;
 
@@ -195,6 +196,13 @@ namespace VNet
 					}
 					break;
 
+				case "video":
+					if (command.Count == 3)
+					{
+						_assets.CreateVideo(command[1], command[2]);
+					}
+					break;
+
 				case "choice":
 					if (command.Count == 3 && command[1] == "create")
 					{
@@ -295,23 +303,40 @@ namespace VNet
 					{
 						Settings.executeNext = false;
 					}
+					fadeDuration = 0;
+					if (command.Contains("fade"))
+					{
+						int commandIndex = command.FindIndex(s => s == "fade");
+						int.TryParse(command[commandIndex + 1], out fadeDuration);
+					}
 
 					switch (command.Count)
 					{
 						case 1:
-							ClearCharacters();
+							ClearCharacters(fadeDuration);
 							break;
 						case 2 when command[1] == "background":
-							ClearBackground();
+							ClearBackground(fadeDuration);
 							break;
 						case 2:
-							ClearCharacters(command[1]);
+							ClearCharacters(fadeDuration, command[1]);
 							break;
 					}
 					break;
 
 				case "ui":
-					//TODO show and hide UI
+					if (command.Contains("pause"))
+					{
+						Settings.executeNext = false;
+					}
+					if (command.Contains("show"))
+					{
+						ManipulateUI(true);
+					}
+					else if (command.Contains("hide"))
+					{
+						ManipulateUI(false);
+					}
 					break;
 
 				// Sound
@@ -321,7 +346,21 @@ namespace VNet
 						Settings.executeNext = false;
 					}
 
-					PlaySound(command[1], double.TryParse(command[2], NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var volume) ? volume : 1.0, command.Contains("r") || command.Contains("repeat"));
+					bool allowProgress = command.Contains("progress");
+					bool repeat = command.Contains("repeat") || command.Contains("r");
+
+					double volume = 1.0;
+					if (command.Count >= 3)
+					{
+						double.TryParse(command[2], NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out volume);
+					}
+
+					if (PlaySound(command[1], volume, repeat))
+					{
+						break;
+					}
+
+					PlayVideo(command[1], volume, allowProgress);
 					break;
 
 				case "stop":

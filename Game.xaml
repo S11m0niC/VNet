@@ -7,6 +7,7 @@
         mc:Ignorable="d"
         Title="VNet" Height="720" Width="1280" ResizeMode="CanMinimize"
         MouseLeftButtonUp="Game_OnMouseLeftButtonUp"
+        MouseRightButtonUp="Game_OnMouseRightButtonUp"
         Loaded="Game_OnLoaded">
     <Canvas Name="ViewportContainer">
         
