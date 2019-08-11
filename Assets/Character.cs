@@ -12,6 +12,7 @@ namespace VNet.Assets
 	public class Character : Asset
 	{
 		public Color color;
+		public string abbreviation;
 		public List<Mood> moods;
 
 		public Character(string name)

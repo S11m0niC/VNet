@@ -80,6 +80,23 @@ namespace VNet.Assets
 			}
 		}
 
+		public void AddAbbreviationToCharacter(string charName, string abbreviation)
+		{
+			try
+			{
+				var selectedCharacter = characters.Find(i => i.name == charName);
+				if (selectedCharacter != null)
+				{
+					selectedCharacter.abbreviation = abbreviation;
+				}
+
+			}
+			catch (Exception e)
+			{
+				MessageBox.Show("Error when adding abbreviation to character " + charName + "!\n\n" + e.Message);
+			}
+		}
+
 		public void SetCharacterColor(string charName, string r, string g, string b)
 		{
 			var selectedCharacter = characters.Find(i => i.name == charName);

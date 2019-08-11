@@ -8,7 +8,7 @@ namespace VNet
 {
 	public class LexicalAnalysis
 	{
-		private readonly int[,] _automata = new int[8, 256];
+		private readonly int[,] _automata = new int[9, 256];
 
 		public Script Source { get; set; }
 
@@ -27,7 +27,7 @@ namespace VNet
 		 */
 		private void SetAutomata()
 		{
-			for (int i = 0; i < 8; i++)
+			for (int i = 0; i < 9; i++)
 			{
 				for (int j = 0; j < 256; j++)
 				{

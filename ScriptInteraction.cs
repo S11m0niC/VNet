@@ -102,6 +102,9 @@ namespace VNet
 								quotedString += token.Lexem;
 							}
 							break;
+						case Type.Comment:
+							lineComponents.Add("comment");
+							break;
 					}
 				}
 				catch (Exception e)
@@ -161,6 +164,11 @@ namespace VNet
 					break;
 
 				case "character":
+					if (command.Count == 4 && command.Contains("abbreviation"))
+					{
+						_assets.AddAbbreviationToCharacter(command[1], command[3]);
+						break;
+					}
 					switch (command.Count)
 					{
 						case 4:
@@ -236,6 +244,9 @@ namespace VNet
 						scripts.Add(new Script(command[1], scripts.Count));
 						ProcessScript(scripts.Count - 1);
 					}
+					break;
+
+				case "comment":
 					break;
 
 				// Graphics
@@ -512,8 +523,12 @@ namespace VNet
 
 			// For other characters
 			Character selectedCharacter = _assets.characters.Find(i => i.name == command[0]);
-			ShowText(selectedCharacter != null ? selectedCharacter.name : command[0], command[1]);
-
+			if (selectedCharacter == null)
+			{
+				selectedCharacter = _assets.characters.Find(i => i.abbreviation == command[0]);
+				ShowText(selectedCharacter != null ? selectedCharacter.name : command[0], command[1]);
+			}
+			
 			return true;
 		}
 	}
