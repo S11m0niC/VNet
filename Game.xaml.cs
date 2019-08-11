@@ -889,7 +889,7 @@ namespace VNet
 
 			MediaElement videoPlayer = new MediaElement
 			{
-				Name = "videoPlayer",
+				Name = hideUI.ToString(),
 				Source = new Uri(video.location),
 				LoadedBehavior = MediaState.Manual,
 				Height = Settings.windowHeight,
@@ -904,13 +904,17 @@ namespace VNet
 			videoPlayer.Play();
 			videoPlayer.MediaEnded += (sender, args) =>
 			{
+				var player = (MediaElement) sender;
+				if (player.Name == "True")
+				{
+					ManipulateUI(true);
+				}
 				videoPlayer.Stop();
 				if (Settings.allowProgress == false)
 				{
 					Settings.allowProgress = true;
 				}
 				ClearTemporaryUiElements(1);
-				ManipulateUI(true);
 			};
 			return true;
 		}
