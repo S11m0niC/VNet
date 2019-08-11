@@ -41,6 +41,7 @@ namespace VNet
 				_automata[0, i] = 2;
 				_automata[1, i] = 1;
 				_automata[2, i] = 2;
+				_automata[8, i] = 2;
 			}
 
 			// for letters [a-z], [A-Z], [_]
@@ -84,6 +85,9 @@ namespace VNet
 			_automata[0, 32] = 6;
 			_automata[6, 9] = 6;
 			_automata[6, 32] = 6;
+
+			// for minus sign in numbers [-]
+			_automata[0, 45] = 8;
 		}
 
 		/*
@@ -129,6 +133,8 @@ namespace VNet
 					return Type.Whitespace;
 				case 7:
 					return Type.NewLine;
+				case 8:
+					return Type.Punctuation;
 				default:
 					return Type.LexError;
 			}

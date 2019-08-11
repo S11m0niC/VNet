@@ -904,6 +904,7 @@ namespace VNet
 					Settings.allowProgress = true;
 				}
 				ClearTemporaryUiElements(1);
+				ManipulateUI(true);
 			};
 			return true;
 		}
