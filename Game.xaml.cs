@@ -868,8 +868,11 @@ namespace VNet
 		/*
 		 * Creates media player and plays requested video covering whole window
 		 */
-		private bool PlayVideo(string name, double volume, bool allowProgress)
+		private bool PlayVideo(string name, double volume, bool allowProgress, bool hideUI)
 		{
+			var video = _assets.videos.Find(vid => vid.name == name);
+			if (video == null) return false;
+
 			if (allowProgress)
 			{
 				Settings.allowProgress = true;
@@ -879,8 +882,11 @@ namespace VNet
 				Settings.allowProgress = false;
 			}
 
-			var video = _assets.videos.Find(vid => vid.name == name);
-			if (video == null) return false;
+			if (hideUI)
+			{
+				ManipulateUI(false);
+			}
+
 			MediaElement videoPlayer = new MediaElement
 			{
 				Name = "videoPlayer",

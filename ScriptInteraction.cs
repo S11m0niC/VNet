@@ -347,6 +347,7 @@ namespace VNet
 					}
 
 					bool allowProgress = command.Contains("progress");
+					bool hideUI = command.Contains("hide");
 					bool repeat = command.Contains("repeat") || command.Contains("r");
 
 					double volume = 1.0;
@@ -360,7 +361,7 @@ namespace VNet
 						break;
 					}
 
-					PlayVideo(command[1], volume, allowProgress);
+					PlayVideo(command[1], volume, allowProgress, hideUI);
 					break;
 
 				case "stop":
