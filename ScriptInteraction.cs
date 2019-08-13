@@ -310,29 +310,35 @@ namespace VNet
 					break;
 
 				case "clear":
+					int unprocessedParts = command.Count - 1;
 					if (command.Contains("pause"))
 					{
+						unprocessedParts--;
 						Settings.executeNext = false;
 					}
 					fadeDuration = 0;
 					if (command.Contains("fade"))
 					{
+						unprocessedParts--;
 						int commandIndex = command.FindIndex(s => s == "fade");
-						int.TryParse(command[commandIndex + 1], out fadeDuration);
+						if (int.TryParse(command[commandIndex + 1], out fadeDuration))
+						{
+							unprocessedParts--;
+						}
 					}
 
-					switch (command.Count)
+					if (command.Contains("background"))
 					{
-						case 1:
-							ClearCharacters(fadeDuration);
-							break;
-						case 2 when command[1] == "background":
-							ClearBackground(fadeDuration);
-							break;
-						case 2:
-							ClearCharacters(fadeDuration, command[1]);
-							break;
+						ClearBackground(fadeDuration);
+						break;
 					}
+
+					if (unprocessedParts > 0)
+					{
+						ClearCharacters(fadeDuration, command[1]);
+						break;
+					}
+					ClearCharacters(fadeDuration);
 					break;
 
 				case "ui":
@@ -350,7 +356,7 @@ namespace VNet
 					}
 					break;
 
-				// Sound
+				// Sound and video
 				case "play":
 					if (command.Contains("pause"))
 					{
@@ -388,9 +394,13 @@ namespace VNet
 						case "music":
 							StopMusic(true);
 							break;
+						case "video":
+							StopVideo();
+							break;
 						default:
 							StopSound(true);
 							StopMusic(true);
+							StopVideo();
 							break;
 					}
 					break;
@@ -522,12 +532,8 @@ namespace VNet
 			}
 
 			// For other characters
-			Character selectedCharacter = _assets.characters.Find(i => i.name == command[0]);
-			if (selectedCharacter == null)
-			{
-				selectedCharacter = _assets.characters.Find(i => i.abbreviation == command[0]);
-				ShowText(selectedCharacter != null ? selectedCharacter.name : command[0], command[1]);
-			}
+			Character selectedCharacter = _assets.characters.Find(i => i.name == command[0]) ?? _assets.characters.Find(i => i.abbreviation == command[0]);
+			ShowText(selectedCharacter != null ? selectedCharacter.name : command[0], command[1]);
 			
 			return true;
 		}

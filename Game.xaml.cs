@@ -64,6 +64,7 @@ namespace VNet
 
 		private MediaPlayer _backgroundMusicPlayer;
 		private MediaPlayer _soundEffectPlayer;
+		private MediaElement _videoPlayer;
 
 		public Game()
 		{
@@ -128,6 +129,22 @@ namespace VNet
 
 			_backgroundImage.Opacity = 0;
 			bool success = _assets.CreateBackground("splash_screen", ".\\assets\\splash.png", false);
+			if (!success)
+			{
+				success = _assets.CreateBackground("splash_screen", ".\\assets\\splash.png", false);
+			}
+			if (!success)
+			{
+				success = _assets.CreateBackground("splash_screen", ".\\assets\\splash.png", false);
+			}
+			if (!success)
+			{
+				success = _assets.CreateBackground("splash_screen", ".\\assets\\splash.png", false);
+			}
+			if (!success)
+			{
+				success = _assets.CreateBackground("splash_screen", ".\\assets\\splash.png", false);
+			}
 			if (success)
 			{
 				_backgroundImage.Source = new BitmapImage(_assets.backgrounds.Find(i => i.name == "splash_screen").imageUri);
@@ -433,15 +450,10 @@ namespace VNet
 				To = 1,
 				Duration = new Duration(TimeSpan.FromMilliseconds(fadeInDuration)),
 			};
-			_fadeIn.Completed += (sender, args) => { Settings.allowProgress = true; };
 
 			Background selectedBackground = _assets.backgrounds.Find(i => i.name == bgName);
 			if (selectedBackground == null) return false;
 
-			if (fadeInDuration > 200)
-			{
-				Settings.allowProgress = false;
-			}
 			_environment.currentBackgroundName = selectedBackground.name;
 			if (selectedBackground.imageUri == null)
 			{
@@ -494,16 +506,11 @@ namespace VNet
 				To = 1,
 				Duration = new Duration(TimeSpan.FromMilliseconds(fadeInDuration)),
 			};
-			_fadeIn.Completed += (sender, args) => { Settings.allowProgress = true; };
 
 			Character selectedCharacter = _assets.characters.Find(i => i.name == chName);
 			Mood selectedMood = selectedCharacter?.moods.Find(i => i.name == moodName);
 			if (selectedMood == null) return false;
 			
-			if (fadeInDuration > 200)
-			{
-				Settings.allowProgress = false;
-			}
 			double xOffset;
 			double yOffset;
 			if (position == "left")
@@ -549,8 +556,28 @@ namespace VNet
 		 * Function clears the image of character specified in argument; if no character is specified clears all characters.
 		 * If fade out is specified, starts the fade out animation.
 		 */
-		private void ClearCharacters(int fadeDuration, string position = "")
+		private void ClearCharacters(int fadeDuration, string nameOrPosition = "")
 		{
+			// Get the actual position if a character name is given
+			string position = "";
+			if (nameOrPosition != "left" && nameOrPosition != "right" && nameOrPosition != "center")
+			{
+				Character selectedCharacter = _assets.characters.Find(i => i.name == nameOrPosition);
+				string charName = selectedCharacter.name;
+				if (_environment.leftCharacterName == charName)
+				{
+					position = "left";
+				}
+				else if (_environment.centerCharacterName == charName)
+				{
+					position = "center";
+				}
+				else if (_environment.rightCharacterName == charName)
+				{
+					position = "right";
+				}
+			}
+
 			// Use animation
 			if (fadeDuration > 0)
 			{
@@ -585,24 +612,32 @@ namespace VNet
 					}
 				};
 
-				if (position == "left" && _environment.leftCharacterName != null)
+				if (position == "left")
 				{
-					_leftCharacter.BeginAnimation(OpacityProperty, _fadeOut);
-					_environment.leftCharacterName = null;
-					_environment.leftCharacterMood = null;
-
+					if (_environment.leftCharacterName != null)
+					{
+						_leftCharacter.BeginAnimation(OpacityProperty, _fadeOut);
+						_environment.leftCharacterName = null;
+						_environment.leftCharacterMood = null;
+					}
 				}
-				else if (position == "center" && _environment.centerCharacterName != null)
+				else if (position == "center")
 				{
-					_centerCharacter.BeginAnimation(OpacityProperty, _fadeOut);
-					_environment.centerCharacterName = null;
-					_environment.centerCharacterMood = null;
+					if (_environment.centerCharacterName != null)
+					{
+						_centerCharacter.BeginAnimation(OpacityProperty, _fadeOut);
+						_environment.centerCharacterName = null;
+						_environment.centerCharacterMood = null;
+					}
 				}
-				else if (position == "right" && _environment.rightCharacterName != null)
+				else if (position == "right")
 				{
-					_rightCharacter.BeginAnimation(OpacityProperty, _fadeOut);
-					_environment.rightCharacterName = null;
-					_environment.rightCharacterMood = null;
+					if (_environment.rightCharacterName != null)
+					{
+						_rightCharacter.BeginAnimation(OpacityProperty, _fadeOut);
+						_environment.rightCharacterName = null;
+						_environment.rightCharacterMood = null;
+					}
 				}
 				else
 				{
@@ -630,24 +665,32 @@ namespace VNet
 			// Do not use animation
 			else
 			{
-				if (position == "left" && _environment.leftCharacterName != null)
+				if (position == "left")
 				{
-					_leftCharacter.Source = null;
-					_environment.leftCharacterName = null;
-					_environment.leftCharacterMood = null;
-
+					if (_environment.leftCharacterName != null)
+					{
+						_leftCharacter.Source = null;
+						_environment.leftCharacterName = null;
+						_environment.leftCharacterMood = null;
+					}
 				}
 				else if (position == "center" && _environment.centerCharacterName != null)
 				{
-					_centerCharacter.Source = null;
-					_environment.centerCharacterName = null;
-					_environment.centerCharacterMood = null;
+					if (_environment.centerCharacterName != null)
+					{
+						_centerCharacter.Source = null;
+						_environment.centerCharacterName = null;
+						_environment.centerCharacterMood = null;
+					}
 				}
 				else if (position == "right" && _environment.rightCharacterName != null)
 				{
-					_rightCharacter.Source = null;
-					_environment.rightCharacterName = null;
-					_environment.rightCharacterMood = null;
+					if (_environment.rightCharacterName != null)
+					{
+						_rightCharacter.Source = null;
+						_environment.rightCharacterName = null;
+						_environment.rightCharacterMood = null;
+					}
 				}
 				else
 				{
@@ -887,7 +930,7 @@ namespace VNet
 				ManipulateUI(false);
 			}
 
-			MediaElement videoPlayer = new MediaElement
+			_videoPlayer = new MediaElement
 			{
 				Name = hideUI.ToString(),
 				Source = new Uri(video.location),
@@ -895,21 +938,22 @@ namespace VNet
 				Height = Settings.windowHeight,
 				Width = Settings.windowWidth
 			};
-			ViewportContainer.Children.Add(videoPlayer);
-			Canvas.SetLeft(videoPlayer, 0);
-			Canvas.SetTop(videoPlayer, 0);
-			Panel.SetZIndex(videoPlayer, 3);
+			ViewportContainer.Children.Add(_videoPlayer);
+			Canvas.SetLeft(_videoPlayer, 0);
+			Canvas.SetTop(_videoPlayer, 0);
+			Panel.SetZIndex(_videoPlayer, 3);
 			_environment.temporaryUIlayer1.Add("videoPlayer");
 
-			videoPlayer.Play();
-			videoPlayer.MediaEnded += (sender, args) =>
+			_videoPlayer.Volume = volume * Settings.soundVolumeMultiplier;
+			_videoPlayer.Play();
+			_videoPlayer.MediaEnded += (sender, args) =>
 			{
 				var player = (MediaElement) sender;
 				if (player.Name == "True")
 				{
 					ManipulateUI(true);
 				}
-				videoPlayer.Stop();
+				_videoPlayer.Stop();
 				if (Settings.allowProgress == false)
 				{
 					Settings.allowProgress = true;
@@ -920,14 +964,29 @@ namespace VNet
 		}
 
 		/*
+		 * Stops a video playback if playing
+		 */
+		private bool StopVideo()
+		{
+			if (_videoPlayer != null)
+			{
+				_videoPlayer.Stop();
+				ClearTemporaryUiElements(1);
+				return true;
+			}
+
+			return false;
+		}
+		/*
 		 * Pauses the gameplay and shows multiple buttons corresponding to choice options
 		 */
 		private bool ShowChoice(string choiceName)
 		{
-			Settings.allowProgress = false;
-			int textTop = 100;
 			Choice ch = _assets.choices.Find(i => i.name == choiceName);
 			if (ch == null) return false;
+
+			int textTop = 100;
+			Settings.allowProgress = false;
 			_textBlock.Text = ch.text;
 
 			foreach (Option opt in ch.options)
@@ -1082,7 +1141,7 @@ namespace VNet
 
 		private void Game_OnMouseRightButtonUp(object sender, MouseButtonEventArgs e)
 		{
-			if (!Settings.inGame)
+			if (!Settings.inGame || !Settings.allowProgress)
 			{
 				return;
 			}
