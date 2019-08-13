@@ -131,19 +131,23 @@ namespace VNet
 			bool success = _assets.CreateBackground("splash_screen", ".\\assets\\splash.png", false);
 			if (!success)
 			{
-				success = _assets.CreateBackground("splash_screen", ".\\assets\\splash.png", false);
+				success = _assets.CreateBackground("splash_screen", ".\\assets\\splash.jpg", false);
 			}
 			if (!success)
 			{
-				success = _assets.CreateBackground("splash_screen", ".\\assets\\splash.png", false);
+				success = _assets.CreateBackground("splash_screen", ".\\assets\\splash.jpeg", false);
 			}
 			if (!success)
 			{
-				success = _assets.CreateBackground("splash_screen", ".\\assets\\splash.png", false);
+				success = _assets.CreateBackground("splash_screen", ".\\assets\\splash.tiff", false);
 			}
 			if (!success)
 			{
-				success = _assets.CreateBackground("splash_screen", ".\\assets\\splash.png", false);
+				success = _assets.CreateBackground("splash_screen", ".\\assets\\splash.bmp", false);
+			}
+			if (!success)
+			{
+				success = _assets.CreateBackground("splash_screen", ".\\assets\\splash.gif", false);
 			}
 			if (success)
 			{
