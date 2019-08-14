@@ -409,6 +409,10 @@ namespace VNet
 					SaveGame(0);
 					break;
 
+				case "end":
+					EndGame();
+					break;
+
 				// Variable manipulation
 				case "int":
 					if (Int32.TryParse(command[2], out intValue))

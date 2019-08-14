@@ -569,11 +569,7 @@ namespace VNet
 		}
 		private void SecondMenuButtonOnClick(object sender, RoutedEventArgs e)
 		{
-			ClearTemporaryUiElements(1);
-			ClearViewport(true);
-			currentScriptIndex = 0;
-			scripts[currentScriptIndex].currentLine = scripts[currentScriptIndex].firstGameplayLine;
-			MainMenu(true);
+			EndGame();
 		}
 
 		private void CancelButtonOnClick(object sender, RoutedEventArgs e)

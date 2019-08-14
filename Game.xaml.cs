@@ -111,9 +111,13 @@ namespace VNet
 			{
 				Name = "backgroundImage",
 				Source = null,
-				Stretch = Stretch.Uniform
+				Height = 720,
+				Width = 1280,
+				Stretch = Stretch.UniformToFill
 			};
 			ViewportContainer.Children.Add(_backgroundImage);
+			Canvas.SetLeft(_backgroundImage, 0);
+			Canvas.SetTop(_backgroundImage, 0);
 			Panel.SetZIndex(_backgroundImage, 1);
 
 			Settings.inGame = false;
@@ -1054,6 +1058,18 @@ namespace VNet
 			}
 			currentScriptIndex = label.scriptIndex;
 			scripts[currentScriptIndex].currentLine = label.lineNumber;
+		}
+
+		/*
+		 * Ends game and returns to main menu
+		 */
+		private void EndGame()
+		{
+			ClearTemporaryUiElements(1);
+			ClearViewport(true);
+			currentScriptIndex = 0;
+			scripts[currentScriptIndex].currentLine = scripts[currentScriptIndex].firstGameplayLine;
+			MainMenu(true);
 		}
 
 		/*
