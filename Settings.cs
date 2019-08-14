@@ -32,7 +32,7 @@ namespace VNet
 		// The minimum splash screen time
 		public static readonly int SplashScreenMinimalTimeInMiliseconds = 3000;
 		// List of keywords considered to be "setup" words. These are executed when launching the game
-		public static readonly List<string> SetupKeywordList = new List<string> {"include", "label", "character", "image", "color", "sound", "music", "video", "choice"};
+		public static readonly List<string> SetupKeywordList = new List<string> {"include", "label", "character", "image", "color", "sound", "music", "video", "choice", "font"};
 		// List of keywords considered to be "game" words. These are executed during normal gameplay
 		public static readonly List<string> GameKeywordList = new List<string> {"jump", "show", "clear", "play", "stop", "ui", "end", "int", "bool", "if", "add", "subtract", "set", "save" };
 		// List of keywords considered to be both "setup" and "game". These are executed both at launch and during gameplay
@@ -68,6 +68,8 @@ namespace VNet
 		 */
 		public static string gameName = "VNet";
 		public static string protagonistName = "";
+		public static string fontText = "Arial";
+		public static string fontNames = "Arial";
 
 		/*
 		 * Loads settings from xml file

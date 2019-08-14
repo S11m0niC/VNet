@@ -34,7 +34,7 @@ namespace VNet
 	public partial class Game : Window
 	{
 		private Assets.Assets _assets;
-		private List<Script> scripts;
+		private List<Script> _scripts;
 		public int currentScriptIndex;
 
 		private LexicalAnalysis _lexical;
@@ -69,7 +69,6 @@ namespace VNet
 		public Game()
 		{
 			InitializeComponent();
-			scripts = new List<Script>();
 		}
 
 		/*
@@ -86,6 +85,7 @@ namespace VNet
 		private void Startup()
 		{
 			// Create global objects needed at this point
+			_scripts = new List<Script>();
 			_assets = new Assets.Assets();
 			_environment = new GameEnvironment();
 			_backgroundMusicPlayer = new MediaPlayer();
@@ -170,9 +170,9 @@ namespace VNet
 			splashScreenFadeOut.Completed += SplashScreenFadeOutCompleted;
 
 			// Processing scripts
-			 scripts.Add(new Script(Settings.StartScriptUri));
-			_lexical = new LexicalAnalysis(scripts[0]);
-			scripts[0].currentLine = ProcessScript(0);
+			 _scripts.Add(new Script(Settings.StartScriptUri));
+			_lexical = new LexicalAnalysis(_scripts[0]);
+			_scripts[0].currentLine = ProcessScript(0);
 
 			// Load settings
 			Settings.LoadSettings();
@@ -290,6 +290,7 @@ namespace VNet
 				Name = "nameBlock",
 				FontSize = 24,
 				FontWeight = FontWeights.ExtraBold,
+				FontFamily = new FontFamily(Settings.fontNames),
 				MinWidth = 180,
 				Height = 40,
 				Padding = new Thickness(30,5,5,5),
@@ -314,6 +315,7 @@ namespace VNet
 				Padding = new Thickness(30, 10, 30, 10),
 				FontSize = 21,
 				FontWeight = FontWeights.Bold,
+				FontFamily = new FontFamily(Settings.fontText),
 				Foreground = new SolidColorBrush(Colors.AliceBlue),
 				Background = new SolidColorBrush(Color.FromArgb(148, 0, 0, 0)),
 				TextWrapping = TextWrapping.Wrap
@@ -407,7 +409,7 @@ namespace VNet
 				Settings.inGame = true;
 				Settings.allowProgress = true;
 				currentScriptIndex = 0;
-				scripts[0].currentLine = scripts[0].firstGameplayLine;
+				_scripts[0].currentLine = _scripts[0].firstGameplayLine;
 				TriggerNextCommand();
 			}
 		}
@@ -429,7 +431,7 @@ namespace VNet
 				{
 					_lexical.Source = oldScriptSource;
 					currentScriptIndex = oldScriptIndex;
-					return scripts[scriptIndex].firstGameplayLine;
+					return _scripts[scriptIndex].firstGameplayLine;
 				}
 				// Empty line
 				if (command.Count == 0)
@@ -440,9 +442,9 @@ namespace VNet
 				{
 					ExecuteCommand(command, false);
 				}
-				else if (scripts[scriptIndex].firstGameplayLine == 0)
+				else if (_scripts[scriptIndex].firstGameplayLine == 0)
 				{
-					scripts[scriptIndex].firstGameplayLine = scripts[scriptIndex].currentLine - 1;
+					_scripts[scriptIndex].firstGameplayLine = _scripts[scriptIndex].currentLine - 1;
 				}
 			}
 		}
@@ -471,6 +473,7 @@ namespace VNet
 			{
 				_backgroundImage.Source = new BitmapImage(selectedBackground.imageUri);
 			}
+			_backgroundImage.BeginAnimation(OpacityProperty, null);
 			_backgroundImage.BeginAnimation(OpacityProperty, _fadeIn);
 			return true;
 		}
@@ -492,9 +495,13 @@ namespace VNet
 				};
 				_fadeOut.Completed += (sender, args) =>
 				{
-					_backgroundImage.Source = null;
+					if (_environment.currentBackgroundName == null)
+					{
+						_backgroundImage.Source = null;
+					}
 				};
 
+				_backgroundImage.BeginAnimation(OpacityProperty, null);
 				_backgroundImage.BeginAnimation(OpacityProperty, _fadeOut);
 			}
 			else
@@ -571,19 +578,26 @@ namespace VNet
 			if (nameOrPosition != "left" && nameOrPosition != "right" && nameOrPosition != "center")
 			{
 				Character selectedCharacter = _assets.characters.Find(i => i.name == nameOrPosition);
-				string charName = selectedCharacter.name;
-				if (_environment.leftCharacterName == charName)
+				if (selectedCharacter != null)
 				{
-					position = "left";
+					string charName = selectedCharacter.name;
+					if (_environment.leftCharacterName == charName)
+					{
+						position = "left";
+					}
+					else if (_environment.centerCharacterName == charName)
+					{
+						position = "center";
+					}
+					else if (_environment.rightCharacterName == charName)
+					{
+						position = "right";
+					}
 				}
-				else if (_environment.centerCharacterName == charName)
-				{
-					position = "center";
-				}
-				else if (_environment.rightCharacterName == charName)
-				{
-					position = "right";
-				}
+			}
+			else
+			{
+				position = nameOrPosition;
 			}
 
 			// Use animation
@@ -801,6 +815,27 @@ namespace VNet
 		}
 
 		/*
+		 * Sets the font for the entire application
+		 */
+		private void SetFont(string place, string fontName)
+		{
+			if (place == "ui")
+			{
+				this.FontFamily = new FontFamily(fontName);
+			}
+
+			if (place == "name")
+			{
+				Settings.fontNames = fontName;
+			}
+
+			if (place == "text")
+			{
+				Settings.fontText = fontName;
+			}
+		}
+
+		/*
 		 * Function is called on each tick of the text timer, adds one character to the text
 		 */
 		private void TextTimerOnTick(object sender, EventArgs e)
@@ -999,7 +1034,7 @@ namespace VNet
 
 			foreach (Option opt in ch.options)
 			{
-				textTop += 50;
+				textTop += 60;
 				Button button = new Button
 				{
 					Name = opt.destinationLabel,
@@ -1026,6 +1061,7 @@ namespace VNet
 
 			return true;
 		}
+		
 		/*
 		 * Event handler for clicking a button in choice, clears the choice, resumes gameplay and jumps to specified label
 		 */
@@ -1057,7 +1093,7 @@ namespace VNet
 				return;
 			}
 			currentScriptIndex = label.scriptIndex;
-			scripts[currentScriptIndex].currentLine = label.lineNumber;
+			_scripts[currentScriptIndex].currentLine = label.lineNumber;
 		}
 
 		/*
@@ -1068,7 +1104,7 @@ namespace VNet
 			ClearTemporaryUiElements(1);
 			ClearViewport(true);
 			currentScriptIndex = 0;
-			scripts[currentScriptIndex].currentLine = scripts[currentScriptIndex].firstGameplayLine;
+			_scripts[currentScriptIndex].currentLine = _scripts[currentScriptIndex].firstGameplayLine;
 			MainMenu(true);
 		}
 

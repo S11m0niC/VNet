@@ -334,7 +334,7 @@ namespace VNet
 			{
 				return;
 			}
-			Savegame savegame = new Savegame(_environment, _assets.variables, currentScriptIndex, scripts[currentScriptIndex].currentLine - 1);
+			Savegame savegame = new Savegame(_environment, _assets.variables, currentScriptIndex, _scripts[currentScriptIndex].currentLine - 1);
 			string saveGameLocation = ".\\saves\\save_" + saveFileIndex.ToString("D2");
 			XmlSerializer serializer = new XmlSerializer(savegame.GetType());
 			using (StreamWriter writer = new StreamWriter(saveGameLocation))

@@ -510,8 +510,8 @@ namespace VNet
 		{
 			// Set required gameplay elements
 			currentScriptIndex = save.currentScriptIndex;
-			scripts[currentScriptIndex].currentLine = save.currentScriptLine;
-			scripts[currentScriptIndex].currentPositionInLine = 0;
+			_scripts[currentScriptIndex].currentLine = save.currentScriptLine;
+			_scripts[currentScriptIndex].currentPositionInLine = 0;
 			_environment = save.currentEnvironment;
 			_environment.currentLanguage = UILanguage.createLanguage(Settings.language);
 			_assets.variables = save.currentVariables;

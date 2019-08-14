@@ -19,7 +19,7 @@ namespace VNet
 		 */
 		public List<string> ProcessScriptLine()
 		{
-			_lexical.Source = scripts[currentScriptIndex];
+			_lexical.Source = _scripts[currentScriptIndex];
 
 			Token token = _lexical.GetNextToken();
 			if (token.Type == Type.Eof) return null;
@@ -229,6 +229,13 @@ namespace VNet
 						}
 					}
 					break;
+
+				case "font":
+					if (command.Count == 3)
+					{
+						SetFont(command[1], command[2]);
+					}
+					break;
 				
 				// Script navigation
 				case "jump":
@@ -241,8 +248,8 @@ namespace VNet
 				case "include":
 					if (command.Count == 2)
 					{
-						scripts.Add(new Script(command[1], scripts.Count));
-						ProcessScript(scripts.Count - 1);
+						_scripts.Add(new Script(command[1], _scripts.Count));
+						ProcessScript(_scripts.Count - 1);
 					}
 					break;
 
@@ -505,7 +512,7 @@ namespace VNet
 					{
 						if (!ExecuteTextCommand(command))
 						{
-							MessageBox.Show("Error in displaying text on line " + scripts[currentScriptIndex].currentLine + "!");
+							MessageBox.Show("Error in displaying text on line " + _scripts[currentScriptIndex].currentLine + "!");
 						}
 						Settings.executeNext = false;
 					}
