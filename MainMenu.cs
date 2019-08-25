@@ -343,7 +343,7 @@ namespace VNet
 							Name = "slotDate",
 							Text = save.currentTime.ToString(CultureInfo.CurrentCulture),
 							TextTrimming = TextTrimming.CharacterEllipsis,
-							FontSize = 14,
+							FontSize = 12,
 							Margin = new Thickness(0, 10, 0, 0)
 						};
 

@@ -425,7 +425,15 @@ namespace VNet
 			currentScriptIndex = scriptIndex;
 			while(true)
 			{
-				List<string> command = ProcessScriptLine();
+				List<string> command = new List<string>();
+				try
+				{
+					command = ProcessScriptLine();
+				}
+				catch (Exception e)
+				{
+					MessageBox.Show(e.Message);
+				}
 				// End of file
 				if (command == null)
 				{
@@ -1159,7 +1167,17 @@ namespace VNet
 			Settings.executeNext = true;
 			while (Settings.executeNext)
 			{
-				List<string> command = ProcessScriptLine();
+				List<string> command = new List<string>();
+				try
+				{
+					command = ProcessScriptLine();
+				}
+				catch (Exception e)
+				{
+					MessageBox.Show(e.Message);
+					return;
+				}
+				
 				if (command.Count == 0 || Settings.SetupKeywordList.Contains(command[0])) continue;
 
 				if (Settings.afterLoad)

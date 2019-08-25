@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
@@ -25,7 +26,7 @@ namespace VNet
 			if (token.Type == Type.Eof) return null;
 			if (token.Type == Type.LexError)
 			{
-				// TODO implement lex error recovery
+				throw new SyntaxErrorException("Error in script on line " + token.Location.Line + ", column " + token.Location.Column);
 			}
 
 			bool insideQuotes = false;
@@ -109,7 +110,7 @@ namespace VNet
 				}
 				catch (Exception e)
 				{
-					MessageBox.Show("Error in script on line " + e.Message);
+					throw new SyntaxErrorException(e.Message);
 				}
 				token = _lexical.GetNextToken();
 				if (token.Type == Type.NewLine) break;
@@ -124,8 +125,7 @@ namespace VNet
 				}
 				if (token.Type == Type.LexError)
 				{
-					MessageBox.Show("Error in script on line " + token.Location.Line + ", column " +
-									token.Location.Column);
+					throw new SyntaxErrorException("Error in script on line " + token.Location.Line + ", column " + token.Location.Column);
 				}
 			}
 

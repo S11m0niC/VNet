@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 
 namespace VNet
 {
@@ -41,6 +42,7 @@ namespace VNet
 				_automata[0, i] = 2;
 				_automata[1, i] = 1;
 				_automata[2, i] = 2;
+				_automata[7, i] = 7;
 				_automata[8, i] = 2;
 			}
 
@@ -74,7 +76,7 @@ namespace VNet
 			_automata[0, 92] = 3;
 
 			// for decimal character in numbers [.]
-			_automata[2, 46] = 2;
+			_automata[2, 46] = 7;
 
 			// for comments [//]
 			_automata[0, 47] = 4;
@@ -110,7 +112,7 @@ namespace VNet
 		private bool AtEndState()
 		{
 			if (_currentState == 1 || _currentState == 2 || _currentState == 3 || _currentState == 5 ||
-				_currentState == 6 || _currentState == 7) return true;
+				_currentState == 6 || _currentState == 7 || _currentState == -1) return true;
 			return false;
 		}
 
@@ -121,6 +123,8 @@ namespace VNet
 		{
 			switch (_currentState)
 			{
+				case -1:
+					return Type.LexError;
 				case 1:
 					return Type.Word;
 				case 2:
@@ -132,7 +136,7 @@ namespace VNet
 				case 6:
 					return Type.Whitespace;
 				case 7:
-					return Type.NewLine;
+					return Type.Number;
 				case 8:
 					return Type.Punctuation;
 				default:
