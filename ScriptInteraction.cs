@@ -113,7 +113,10 @@ namespace VNet
 					throw new SyntaxErrorException(e.Message);
 				}
 				token = _lexical.GetNextToken();
-				if (token.Type == Type.NewLine) break;
+				if (token.Type == Type.NewLine)
+				{
+					break;
+				}
 
 				if (token.Type == Type.Eof)
 				{

@@ -223,7 +223,48 @@ namespace VNet
 			}
 			UpdateLayout();
 		}
-		
+
+		/*
+		 * Clears the screen of all elements except for specified ones
+		 */
+		private void ClearViewport(List<string> elementsToIgnore)
+		{
+			int allowedElementsCount = 0;
+			while (ViewportContainer.Children.Count > allowedElementsCount)
+			{
+				if (!(ViewportContainer.Children[allowedElementsCount] is Image image))
+				{
+					if (!(ViewportContainer.Children[allowedElementsCount] is MediaElement element))
+					{
+						ViewportContainer.Children.RemoveAt(allowedElementsCount);
+					}
+					else
+					{
+						if (elementsToIgnore.Contains(element.Name))
+						{
+							allowedElementsCount++;
+						}
+						else
+						{
+							ViewportContainer.Children.RemoveAt(allowedElementsCount);
+						}
+					}
+				}
+				else
+				{
+					if (elementsToIgnore.Contains(image.Name))
+					{
+						allowedElementsCount++;
+					}
+					else
+					{
+						ViewportContainer.Children.RemoveAt(allowedElementsCount);
+					}
+				}
+			}
+			UpdateLayout();
+		}
+
 		/*
 		 * Clears all UI elements off the screen with names contained in the temporaryUIElements list in the game environment.
 		 * Used for elements which appear over normal gameplay elements (save dialog, etc.)
@@ -1167,7 +1208,7 @@ namespace VNet
 			Settings.executeNext = true;
 			while (Settings.executeNext)
 			{
-				List<string> command = new List<string>();
+				List<string> command;
 				try
 				{
 					command = ProcessScriptLine();
@@ -1175,6 +1216,12 @@ namespace VNet
 				catch (Exception e)
 				{
 					MessageBox.Show(e.Message);
+					return;
+				}
+
+				if (command == null)
+				{
+					EndGame();
 					return;
 				}
 				

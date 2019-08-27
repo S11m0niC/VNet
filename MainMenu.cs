@@ -206,7 +206,7 @@ namespace VNet
 			bool saveFound = false;
 			for (int i = 0; i < 10; i++)
 			{
-				Savegame save = FindSaveGame(i);
+				Savegame save = Savegame.DeserializeSaveGame(i);
 				if (save != null && save.currentTime > mostRecentDate)
 				{
 					mostRecentSave = save;
@@ -484,7 +484,7 @@ namespace VNet
 				Button btn = (Button)sender;
 				if (Int32.TryParse(btn.Name.Substring(btn.Name.Length - 1, 1), out int saveIndex))
 				{
-					LoadGame(FindSaveGame(saveIndex));
+					LoadGame(Savegame.DeserializeSaveGame(saveIndex));
 				}
 			}
 		}
@@ -495,15 +495,6 @@ namespace VNet
 		private void DeleteSavedGame(int saveIndex)
 		{
 			File.Delete(Settings.SaveFilePath(saveIndex));
-		}
-
-		/*
-		 * Loads and starts game based on the provided save index (0-9)
-		 */
-		private Savegame FindSaveGame(int saveGameIndex)
-		{
-			Savegame save = Savegame.DeserializeSaveGame(saveGameIndex);
-			return save;
 		}
 
 		private void LoadGame(Savegame save)
