@@ -91,16 +91,24 @@ namespace VNet
 			_backgroundMusicPlayer = new MediaPlayer();
 			_soundEffectPlayer = new MediaPlayer();
 
-			// Create default black background
-			WriteableBitmap black = BitmapFactory.New(1280, 720);
-			black.Clear(Colors.Black);
-			Background defaultBlack = new Background("default_black", black);
-			_assets.backgrounds.Add(defaultBlack);
+			// Load default background
+			try
+			{
+				bool bg_success = _assets.CreateBackground("default_back", ".\\assets\\default.png", false);
+				if (!bg_success)
+				{
+					throw new Exception();
+				}
+			}
+			catch (Exception e)
+			{
+				MessageBox.Show("Error in loading default background image!\n" + e.Message);
+			}
 
 			_blackBackgroundConstant = new Image
 			{
 				Name = "blackBackground",
-				Source = black,
+				Source = _assets.backgrounds.Find(i => i.name == "default_back").Image,
 				Stretch = Stretch.Uniform
 			};
 			ViewportContainer.Children.Add(_blackBackgroundConstant);
@@ -516,7 +524,7 @@ namespace VNet
 			_environment.currentBackgroundName = selectedBackground.name;
 			if (selectedBackground.imageUri == null)
 			{
-				_backgroundImage.Source = selectedBackground.image;
+				_backgroundImage.Source = selectedBackground.Image;
 			}
 			else
 			{
