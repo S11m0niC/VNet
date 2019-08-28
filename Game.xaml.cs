@@ -43,6 +43,7 @@ namespace VNet
 		// Game area elements
 		private TextBlock _textBlock;
 		private TextBlock _nameBlock;
+		private TextBlock _saveIndicatorBlock;
 		private Border _textBlockBorder;
 		private Border _nameBlockBorder;
 		private Border _buttonBorder;
@@ -458,6 +459,24 @@ namespace VNet
 			Canvas.SetTop(_buttonBorder, Settings.windowHeight - 173);
 			Panel.SetZIndex(_buttonBorder, 4);
 
+			_saveIndicatorBlock = new TextBlock()
+			{
+
+				Name = "saveIndicatorBlock",
+				Text = _environment.currentLanguage.UI_gameSavedReport,
+				FontSize = 18,
+				FontWeight = FontWeights.DemiBold,
+				Foreground = new SolidColorBrush(Colors.AliceBlue),
+				MinWidth = 169,
+				Height = 40,
+				Opacity = 0,
+				Padding = new Thickness(0, 0, 0, 10),
+			};
+			ViewportContainer.Children.Add(_saveIndicatorBlock);
+			Canvas.SetLeft(_saveIndicatorBlock, Settings.windowWidth - 169);
+			Canvas.SetTop(_saveIndicatorBlock, Settings.windowHeight - 198);
+			Panel.SetZIndex(_saveIndicatorBlock, 4);
+
 			Settings.UIvisible = true;
 			AllowResize(true);
 			if (newGame)
@@ -468,6 +487,54 @@ namespace VNet
 				_scripts[0].currentLine = _scripts[0].firstGameplayLine;
 				TriggerNextCommand();
 			}
+		}
+
+		/*
+		 * Refreshes elements of UI to new positions
+		 */
+		private void RefreshVisualUIElements()
+		{
+			Canvas.SetLeft(_nameBlockBorder, 0);
+			Canvas.SetTop(_nameBlockBorder, Settings.windowHeight - 160);
+
+			_textBlock.Width = Settings.windowWidth;
+			Canvas.SetLeft(_textBlockBorder, 0);
+			Canvas.SetTop(_textBlockBorder, Settings.windowHeight - 120);
+
+			Canvas.SetLeft(_buttonBorder, Settings.windowWidth - 169);
+			Canvas.SetTop(_buttonBorder, Settings.windowHeight - 173);
+
+			Canvas.SetLeft(_saveIndicatorBlock, Settings.windowWidth - 169);
+			Canvas.SetTop(_saveIndicatorBlock, Settings.windowHeight - 198);
+
+			Character selectedCharacter;
+			if (_environment.leftCharacterName != null)
+			{
+				selectedCharacter = _assets.characters.Find(i => i.name == _environment.leftCharacterName);
+				_leftCharacter.Height = selectedCharacter.heightCoefficient * Settings.windowHeight;
+				Canvas.SetLeft(_leftCharacter, selectedCharacter.horizontalOffset);
+				Canvas.SetTop(_leftCharacter, Settings.windowHeight - _leftCharacter.Height + selectedCharacter.verticalOffset);
+			}
+
+			if (_environment.rightCharacterName != null)
+			{
+				selectedCharacter = _assets.characters.Find(i => i.name == _environment.rightCharacterName);
+				_rightCharacter.Height = selectedCharacter.heightCoefficient * Settings.windowHeight;
+				Canvas.SetLeft(_rightCharacter, Settings.windowWidth * 0.7 + selectedCharacter.horizontalOffset);
+				Canvas.SetTop(_rightCharacter, Settings.windowHeight - _rightCharacter.Height + selectedCharacter.verticalOffset);
+			}
+
+			if (_environment.centerCharacterName != null)
+			{
+				selectedCharacter = _assets.characters.Find(i => i.name == _environment.centerCharacterName);
+				_centerCharacter.Height = selectedCharacter.heightCoefficient * Settings.windowHeight;
+				Canvas.SetLeft(_centerCharacter, Settings.windowWidth * 0.4 + selectedCharacter.horizontalOffset);
+				Canvas.SetTop(_centerCharacter, Settings.windowHeight - _centerCharacter.Height + selectedCharacter.verticalOffset);
+			}
+
+			Settings.UIvisible = true;
+			AllowResize(true);
+			UpdateLayout();
 		}
 
 		/*
@@ -593,23 +660,23 @@ namespace VNet
 			// Check if character is already displayed
 			if (_environment.leftCharacterName != null)
 			{
-				if (_environment.leftCharacterName == selectedCharacter.name)
+				if (_environment.leftCharacterName == selectedCharacter.name && position != "left")
 				{
-					return false;
+					ClearCharacters(0, "left");
 				}
 			}
 			if (_environment.centerCharacterName != null)
 			{
-				if (_environment.centerCharacterName == selectedCharacter.name)
+				if (_environment.centerCharacterName == selectedCharacter.name && position != "center")
 				{
-					return false;
+					ClearCharacters(0, "center");
 				}
 			}
 			if (_environment.rightCharacterName != null)
 			{
-				if (_environment.rightCharacterName == selectedCharacter.name)
+				if (_environment.rightCharacterName == selectedCharacter.name && position != "right")
 				{
-					return false;
+					ClearCharacters(0, "right");
 				}
 			}
 
@@ -1337,9 +1404,7 @@ namespace VNet
 			// Reload screen elements
 			if (Settings.inGame)
 			{
-				ClearViewport(false);
-				NewGame(false);
-				LoadSurroundingsFromEnvironment(_environment);
+				RefreshVisualUIElements();
 			}
 			else
 			{

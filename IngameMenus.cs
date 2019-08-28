@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using System.Xml.Serialization;
 using VNet.Assets;
@@ -344,6 +345,31 @@ namespace VNet
 				serializer.Serialize(writer, savegame);
 				writer.Close();
 			}
+			ReportSavedGame();
+		}
+
+		/*
+		 * Shows text on screen reporting the game has been saved
+		 */
+		private void ReportSavedGame()
+		{
+			DoubleAnimation fadeIn = new DoubleAnimation
+			{
+				From = 0,
+				To = 1,
+				Duration = new Duration(TimeSpan.FromMilliseconds(1000))
+			};
+			fadeIn.Completed += (sender, args) =>
+			{
+				DoubleAnimation fadeOut = new DoubleAnimation
+				{
+					From = 1,
+					To = 0,
+					Duration = new Duration(TimeSpan.FromMilliseconds(1000))
+				};
+				_saveIndicatorBlock.BeginAnimation(OpacityProperty, fadeOut);
+			};
+			_saveIndicatorBlock.BeginAnimation(OpacityProperty, fadeIn);
 		}
 
 		/*

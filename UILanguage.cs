@@ -31,6 +31,7 @@ namespace VNet
 		public string UI_exitGame_instructions;
 		public string UI_exitGame_exit;
 
+		public string UI_gameSavedReport;
 		public string UI_emptySlot;
 		public string UI_confirm;
 		public string UI_back;
@@ -68,6 +69,7 @@ namespace VNet
 					lang.UI_returnToMenu_return = "Return";
 					lang.UI_exitGame_instructions = "Exit game?\n(Unsaved progress will be lost)";
 					lang.UI_exitGame_exit = "Exit";
+					lang.UI_gameSavedReport = "Game saved";
 					lang.UI_emptySlot = "*Empty slot*";
 					lang.UI_confirm = "Confirm";
 					lang.UI_back = "Back";
@@ -98,6 +100,7 @@ namespace VNet
 					lang.UI_returnToMenu_return = "Vrni";
 					lang.UI_exitGame_instructions = "Izhod iz igre?\n(Neshranjen napredek bo izgubljen)";
 					lang.UI_exitGame_exit = "Izhod";
+					lang.UI_gameSavedReport = "Igra shranjena";
 					lang.UI_emptySlot = "*Prazno*";
 					lang.UI_confirm = "Potrdi";
 					lang.UI_back = "Nazaj";
