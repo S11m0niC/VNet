@@ -22,6 +22,7 @@ namespace VNet
 		private void SaveButtonOnClick(object sender, RoutedEventArgs e)
 		{
 			Settings.inGame = false;
+			AllowResize(false);
 
 			Border darkOverlay = new Border()
 			{
@@ -323,6 +324,7 @@ namespace VNet
 			ClearTemporaryUiElements(1);
 			ClearTemporaryUiElements(2);
 			Settings.inGame = true;
+			AllowResize(true);
 		}
 
 		/*
@@ -350,6 +352,7 @@ namespace VNet
 		private void ExitButtonOnClick(object sender, RoutedEventArgs e)
 		{
 			Settings.inGame = false;
+			AllowResize(false);
 
 			Border darkOverlay = new Border()
 			{
@@ -464,6 +467,7 @@ namespace VNet
 		private void MenuButtonOnClick(object sender, RoutedEventArgs e)
 		{
 			Settings.inGame = false;
+			AllowResize(false);
 
 			Border darkOverlay = new Border()
 			{
@@ -576,6 +580,7 @@ namespace VNet
 		{
 			ClearTemporaryUiElements(1);
 			Settings.inGame = true;
+			AllowResize(true);
 		}
 	}
 }

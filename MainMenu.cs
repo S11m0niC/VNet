@@ -185,6 +185,8 @@ namespace VNet
 			Canvas.SetTop(languageButton, Settings.windowHeight - 98);
 			Panel.SetZIndex(languageButton, 2);
 
+			AllowResize(true);
+
 			// Menu background image and music
 			if (restartBackground)
 			{
@@ -252,6 +254,8 @@ namespace VNet
 		 */
 		private void ShowLoadGameScreen()
 		{
+			AllowResize(false);
+
 			TextBlock questionTextBlock = new TextBlock
 			{
 				Name = "questionTextBlock",
@@ -564,6 +568,8 @@ namespace VNet
 		 */
 		private void ShowOptionsScreen()
 		{
+			AllowResize(false);
+
 			TextBlock optionsTextBlock = new TextBlock
 			{
 				Name = "gameNameTextBlock",

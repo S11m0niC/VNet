@@ -196,7 +196,6 @@ namespace VNet
 		private void SplashScreenFadeOutCompleted(object sender, EventArgs e)
 		{
 			Settings.gameLoaded = true;
-			this.ResizeMode = ResizeMode.CanResize;
 			MainMenu(true, true);
 		}
 
@@ -460,6 +459,7 @@ namespace VNet
 			Panel.SetZIndex(_buttonBorder, 4);
 
 			Settings.UIvisible = true;
+			AllowResize(true);
 			if (newGame)
 			{
 				Settings.inGame = true;
@@ -589,7 +589,30 @@ namespace VNet
 			Character selectedCharacter = _assets.characters.Find(i => i.name == chName);
 			Mood selectedMood = selectedCharacter?.moods.Find(i => i.name == moodName);
 			if (selectedMood == null) return false;
-			
+
+			// Check if character is already displayed
+			if (_environment.leftCharacterName != null)
+			{
+				if (_environment.leftCharacterName == selectedCharacter.name)
+				{
+					return false;
+				}
+			}
+			if (_environment.centerCharacterName != null)
+			{
+				if (_environment.centerCharacterName == selectedCharacter.name)
+				{
+					return false;
+				}
+			}
+			if (_environment.rightCharacterName != null)
+			{
+				if (_environment.rightCharacterName == selectedCharacter.name)
+				{
+					return false;
+				}
+			}
+
 			if (position == "left")
 			{
 				_environment.leftCharacterName = selectedCharacter.name;
@@ -1024,6 +1047,7 @@ namespace VNet
 			{
 				Settings.allowProgress = false;
 			}
+			AllowResize(false);
 
 			if (hideUI)
 			{
@@ -1059,6 +1083,7 @@ namespace VNet
 					Settings.allowProgress = true;
 				}
 				ClearTemporaryUiElements(1);
+				AllowResize(true);
 			};
 			return true;
 		}
@@ -1072,6 +1097,7 @@ namespace VNet
 			{
 				_videoPlayer.Stop();
 				ClearTemporaryUiElements(1);
+				AllowResize(true);
 				return true;
 			}
 
@@ -1275,6 +1301,21 @@ namespace VNet
 				return;
 			}
 			ManipulateUI(!Settings.UIvisible);
+		}
+
+		/*
+		 * Changes the resize mode of the game window.
+		 */
+		private void AllowResize(bool allow)
+		{
+			if (allow)
+			{
+				this.ResizeMode = ResizeMode.CanResize;
+			}
+			else
+			{
+				this.ResizeMode = ResizeMode.CanMinimize;
+			}
 		}
 
 		private void Game_OnSizeChanged(object sender, SizeChangedEventArgs e)
