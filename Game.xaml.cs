@@ -672,24 +672,16 @@ namespace VNet
 					Duration = new Duration(TimeSpan.FromMilliseconds(fadeDuration)),
 				};
 				_fadeOut.Completed += (sender, args) =>
-				{
-					DoubleAnimation anim = (DoubleAnimation) sender;
-					string pos = anim.Name;
-					if (pos == "")
-					{
-						_leftCharacter.Source = null;
-						_centerCharacter.Source = null;
-						_rightCharacter.Source = null;
-					}
-					else if (pos == "left")
+				{	
+					if (_environment.leftCharacterName == null)
 					{
 						_leftCharacter.Source = null;
 					}
-					else if (pos == "right")
+					if (_environment.rightCharacterName == null)
 					{
 						_rightCharacter.Source = null;
 					}
-					else
+					if (_environment.centerCharacterName == null)
 					{
 						_centerCharacter.Source = null;
 					}
@@ -804,6 +796,10 @@ namespace VNet
 		 */
 		private void ShowText(string characterName, string content, bool thought = false)
 		{
+			if (content.Length == 0)
+			{
+				return;
+			}
 			Character selChar = _assets.characters.Find(i => i.name == characterName);
 			if (selChar != null)
 			{
@@ -1046,7 +1042,7 @@ namespace VNet
 			Canvas.SetLeft(_videoPlayer, 0);
 			Canvas.SetTop(_videoPlayer, 0);
 			Panel.SetZIndex(_videoPlayer, 3);
-			_environment.temporaryUIlayer1.Add("videoPlayer");
+			_environment.temporaryUIlayer1.Add(_videoPlayer.Name);
 
 			_videoPlayer.Volume = volume * Settings.soundVolumeMultiplier;
 			_videoPlayer.Play();

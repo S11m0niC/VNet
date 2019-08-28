@@ -26,7 +26,7 @@ namespace VNet
 			if (token.Type == Type.Eof) return null;
 			if (token.Type == Type.LexError)
 			{
-				throw new SyntaxErrorException("Error in script on line " + token.Location.Line + ", column " + token.Location.Column);
+				throw new SyntaxErrorException("Error in script number " + currentScriptIndex + " on line " + token.Location.Line + ", column " + token.Location.Column);
 			}
 
 			bool insideQuotes = false;
@@ -128,7 +128,7 @@ namespace VNet
 				}
 				if (token.Type == Type.LexError)
 				{
-					throw new SyntaxErrorException("Error in script on line " + token.Location.Line + ", column " + token.Location.Column);
+					throw new SyntaxErrorException("Error in script number " + currentScriptIndex + " on line " + token.Location.Line + ", column " + token.Location.Column);
 				}
 			}
 

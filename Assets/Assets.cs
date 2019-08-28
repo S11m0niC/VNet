@@ -123,6 +123,10 @@ namespace VNet.Assets
 			{
 				if (double.TryParse(height, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out double heightCoefficient))
 				{
+					if (heightCoefficient < 0)
+					{
+						return;
+					}
 					selectedCharacter.heightCoefficient = heightCoefficient;
 				}
 			}

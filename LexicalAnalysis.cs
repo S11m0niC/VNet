@@ -60,20 +60,24 @@ namespace VNet
 			_automata[0, 95] = 1;
 			_automata[1, 95] = 1;
 
-			// for punctuation [!, ", ', (, ), ,, ., =, <, >, ?, \]
+			// for punctuation [!, ", ', #, (, ), ,, ., :, ;, =, <, >, ?, \, ~]
 			_automata[0, 33] = 3;
 			_automata[0, 34] = 3;
+			_automata[0, 35] = 3;
 			_automata[0, 39] = 3;
 			_automata[0, 40] = 3;
 			_automata[0, 41] = 3;
 			_automata[0, 42] = 3;
 			_automata[0, 44] = 3;
 			_automata[0, 46] = 3;
+			_automata[0, 58] = 3;
+			_automata[0, 59] = 3;
 			_automata[0, 60] = 3;
 			_automata[0, 61] = 3;
 			_automata[0, 62] = 3;
 			_automata[0, 63] = 3;
 			_automata[0, 92] = 3;
+			_automata[0, 126] = 3;
 
 			// for decimal character in numbers [.]
 			_automata[2, 46] = 7;
@@ -111,8 +115,8 @@ namespace VNet
 		 */
 		private bool AtEndState()
 		{
-			if (_currentState == 1 || _currentState == 2 || _currentState == 3 || _currentState == 5 ||
-				_currentState == 6 || _currentState == 7 || _currentState == -1) return true;
+			if (_currentState == 1 || _currentState == 2 || _currentState == 3 || _currentState == 4 || _currentState == 5 ||
+				_currentState == 6 || _currentState == 7 || _currentState == 8 || _currentState == -1) return true;
 			return false;
 		}
 
@@ -130,6 +134,8 @@ namespace VNet
 				case 2:
 					return Type.Number;
 				case 3:
+					return Type.Punctuation;
+				case 4:
 					return Type.Punctuation;
 				case 5:
 					return Type.Comment;
