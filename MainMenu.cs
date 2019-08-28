@@ -22,7 +22,7 @@ namespace VNet
 		/*
 		 * Loads main menu elements
 		 */
-		private void MainMenu(bool restartBackgroundAndMusic)
+		private void MainMenu(bool restartBackground, bool restartMusic)
 		{
 			ClearViewport(true);
 
@@ -177,21 +177,24 @@ namespace VNet
 				int langIndex = Settings.LanguageInitialList.FindIndex(s => s == Settings.language);
 				Settings.language = langIndex == Settings.LanguageInitialList.Count - 1 ? Settings.LanguageInitialList[0] : Settings.LanguageInitialList[langIndex + 1];
 				_environment.currentLanguage = UILanguage.createLanguage(Settings.language);
-				MainMenu(false);
+				MainMenu(false, false);
 				SaveSettings();
 			};
 			ViewportContainer.Children.Add(languageButton);
-			Canvas.SetLeft(languageButton, 1202);
-			Canvas.SetTop(languageButton, 622);
+			Canvas.SetLeft(languageButton, Settings.windowWidth - 98);
+			Canvas.SetTop(languageButton, Settings.windowHeight - 98);
 			Panel.SetZIndex(languageButton, 2);
 
 			// Menu background image and music
-			if (restartBackgroundAndMusic)
+			if (restartBackground)
+			{
+				ShowBackground("menu_background", 10);
+			}
+
+			if (restartMusic)
 			{
 				_backgroundMusicPlayer.Stop();
 				_soundEffectPlayer.Stop();
-
-				ShowBackground("menu_background", 10);
 				PlaySound("menu_music", 1, true);
 			}
 		}
@@ -417,7 +420,7 @@ namespace VNet
 			};
 			cancelButton.Click += (sender, args) =>
 			{
-				MainMenu(false);
+				MainMenu(false, false);
 			};
 
 			Grid buttonGrid = new Grid
@@ -694,7 +697,7 @@ namespace VNet
 			backButton.Click += (sender, args) =>
 			{
 				SaveSettings();
-				MainMenu(false);
+				MainMenu(false, false);
 			};
 			ViewportContainer.Children.Add(backButton);
 			Canvas.SetLeft(backButton, 100);

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -102,13 +103,47 @@ namespace VNet.Assets
 			var selectedCharacter = characters.Find(i => i.name == charName);
 			if (selectedCharacter != null)
 			{
-				int.TryParse(r, out int red);
-				int.TryParse(g, out int green);
-				int.TryParse(b, out int blue);
-				byte redByte = (byte)red;
-				byte greenByte = (byte)green;
-				byte blueByte = (byte)blue;
-				selectedCharacter.color = Color.FromRgb(redByte, greenByte, blueByte);
+				var rSuccess = int.TryParse(r, out int red);
+				var gSuccess = int.TryParse(g, out int green);
+				var bSuccess = int.TryParse(b, out int blue);
+				if (rSuccess && gSuccess && bSuccess)
+				{
+					byte redByte = (byte)red;
+					byte greenByte = (byte)green;
+					byte blueByte = (byte)blue;
+					selectedCharacter.color = Color.FromRgb(redByte, greenByte, blueByte);
+				}
+			}
+		}
+
+		public void SetCharacterHeight(string charName, string height)
+		{
+			var selectedCharacter = characters.Find(i => i.name == charName);
+			if (selectedCharacter != null)
+			{
+				if (double.TryParse(height, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out double heightCoefficient))
+				{
+					selectedCharacter.heightCoefficient = heightCoefficient;
+				}
+			}
+		}
+
+		public void SetCharacterOffset(string charName, string offset, bool vertical)
+		{
+			var selectedCharacter = characters.Find(i => i.name == charName);
+			if (selectedCharacter != null)
+			{
+				if (int.TryParse(offset, out int intOffset))
+				{
+					if (vertical)
+					{
+						selectedCharacter.verticalOffset = intOffset;
+					}
+					else
+					{
+						selectedCharacter.horizontalOffset = intOffset;
+					}
+				}
 			}
 		}
 

@@ -109,7 +109,9 @@ namespace VNet
 			{
 				Name = "blackBackground",
 				Source = _assets.backgrounds.Find(i => i.name == "default_back").Image,
-				Stretch = Stretch.Uniform
+				Height = Settings.windowHeight,
+				Width = Settings.windowWidth,
+				Stretch = Stretch.UniformToFill
 			};
 			ViewportContainer.Children.Add(_blackBackgroundConstant);
 			Panel.SetZIndex(_blackBackgroundConstant, 0);
@@ -119,8 +121,8 @@ namespace VNet
 			{
 				Name = "backgroundImage",
 				Source = null,
-				Height = 720,
-				Width = 1280,
+				Height = Settings.windowHeight,
+				Width = Settings.windowWidth,
 				Stretch = Stretch.UniformToFill
 			};
 			ViewportContainer.Children.Add(_backgroundImage);
@@ -193,7 +195,9 @@ namespace VNet
 		}
 		private void SplashScreenFadeOutCompleted(object sender, EventArgs e)
 		{
-			MainMenu(true);
+			Settings.gameLoaded = true;
+			this.ResizeMode = ResizeMode.CanResize;
+			MainMenu(true, true);
 		}
 
 		/*
@@ -311,6 +315,7 @@ namespace VNet
 			{
 				Name = "leftCharacter",
 				Opacity = 0.0,
+				Height = Settings.windowHeight * 0.75,
 				Stretch = Stretch.Uniform
 			};
 			ViewportContainer.Children.Add(_leftCharacter);
@@ -320,6 +325,7 @@ namespace VNet
 			{
 				Name = "centerCharacter",
 				Opacity = 0.0,
+				Height = Settings.windowHeight * 0.75,
 				Stretch = Stretch.Uniform
 			};
 			ViewportContainer.Children.Add(_centerCharacter);
@@ -329,6 +335,7 @@ namespace VNet
 			{
 				Name = "rightCharacter",
 				Opacity = 0.0,
+				Height = Settings.windowHeight * 0.75,
 				Stretch = Stretch.Uniform
 			};
 			ViewportContainer.Children.Add(_rightCharacter);
@@ -353,7 +360,7 @@ namespace VNet
 			};
 			ViewportContainer.Children.Add(_nameBlockBorder);
 			Canvas.SetLeft(_nameBlockBorder, 0);
-			Canvas.SetTop(_nameBlockBorder, 560);
+			Canvas.SetTop(_nameBlockBorder, Settings.windowHeight - 160);
 			Panel.SetZIndex(_nameBlockBorder, 4);
 
 			_textBlock = new TextBlock
@@ -377,7 +384,7 @@ namespace VNet
 			};
 			ViewportContainer.Children.Add(_textBlockBorder);
 			Canvas.SetLeft(_textBlockBorder, 0);
-			Canvas.SetTop(_textBlockBorder, 600);
+			Canvas.SetTop(_textBlockBorder, Settings.windowHeight - 120);
 			Panel.SetZIndex(_textBlockBorder, 4);
 
 			_textTimer = new DispatcherTimer
@@ -448,8 +455,8 @@ namespace VNet
 				Child = buttonPanel
 			};
 			ViewportContainer.Children.Add(_buttonBorder);
-			Canvas.SetLeft(_buttonBorder, 1111);
-			Canvas.SetTop(_buttonBorder, 547);
+			Canvas.SetLeft(_buttonBorder, Settings.windowWidth - 169);
+			Canvas.SetTop(_buttonBorder, Settings.windowHeight - 173);
 			Panel.SetZIndex(_buttonBorder, 4);
 
 			Settings.UIvisible = true;
@@ -583,44 +590,41 @@ namespace VNet
 			Mood selectedMood = selectedCharacter?.moods.Find(i => i.name == moodName);
 			if (selectedMood == null) return false;
 			
-			double xOffset;
-			double yOffset;
 			if (position == "left")
 			{
 				_environment.leftCharacterName = selectedCharacter.name;
 				_environment.leftCharacterMood = selectedMood.name;
-				xOffset = 0;
-				yOffset = 0;
 				_leftCharacter.Source = new BitmapImage(selectedMood.imageUri);
 				_leftCharacter.Opacity = 0;
+				_leftCharacter.Height = selectedCharacter.heightCoefficient * Settings.windowHeight;
 				_leftCharacter.BeginAnimation(OpacityProperty, _fadeIn);
-				Canvas.SetLeft(_leftCharacter, xOffset);
-				Canvas.SetTop(_leftCharacter, yOffset);
+				Canvas.SetLeft(_leftCharacter, selectedCharacter.horizontalOffset);
+				Canvas.SetTop(_leftCharacter, Settings.windowHeight - _leftCharacter.Height + selectedCharacter.verticalOffset);
 			}
 			else if (position == "right")
 			{
 				_environment.rightCharacterName = selectedCharacter.name;
 				_environment.rightCharacterMood = selectedMood.name;
-				xOffset = 760;
-				yOffset = 0;
 				_rightCharacter.Opacity = 0;
+				_rightCharacter.Height = selectedCharacter.heightCoefficient * Settings.windowHeight;
 				_rightCharacter.Source = new BitmapImage(selectedMood.imageUri);
 				_rightCharacter.BeginAnimation(OpacityProperty, _fadeIn);
-				Canvas.SetLeft(_rightCharacter, xOffset);
-				Canvas.SetTop(_rightCharacter, yOffset);
+				Canvas.SetLeft(_rightCharacter, Settings.windowWidth * 0.7 + selectedCharacter.horizontalOffset);
+				Canvas.SetTop(_rightCharacter, Settings.windowHeight - _rightCharacter.Height + selectedCharacter.verticalOffset);
 			}
 			else
 			{
 				_environment.centerCharacterName = selectedCharacter.name;
 				_environment.centerCharacterMood = selectedMood.name;
-				xOffset = 380;
-				yOffset = 0;
 				_centerCharacter.Opacity = 0;
+				_centerCharacter.Height = selectedCharacter.heightCoefficient * Settings.windowHeight;
 				_centerCharacter.Source = new BitmapImage(selectedMood.imageUri);
 				_centerCharacter.BeginAnimation(OpacityProperty, _fadeIn);
-				Canvas.SetLeft(_centerCharacter, xOffset);
-				Canvas.SetTop(_centerCharacter, yOffset);
+				Canvas.SetLeft(_centerCharacter, Settings.windowWidth * 0.4 + selectedCharacter.horizontalOffset);
+				Canvas.SetTop(_centerCharacter, Settings.windowHeight - _centerCharacter.Height + selectedCharacter.verticalOffset);
 			}
+
+			UpdateLayout();
 			return true;
 		}
 
@@ -1162,7 +1166,7 @@ namespace VNet
 			ClearViewport(true);
 			currentScriptIndex = 0;
 			_scripts[currentScriptIndex].currentLine = _scripts[currentScriptIndex].firstGameplayLine;
-			MainMenu(true);
+			MainMenu(true, true);
 		}
 
 		/*
@@ -1275,6 +1279,35 @@ namespace VNet
 				return;
 			}
 			ManipulateUI(!Settings.UIvisible);
+		}
+
+		private void Game_OnSizeChanged(object sender, SizeChangedEventArgs e)
+		{
+			if (!Settings.gameLoaded)
+			{
+				return;
+			}
+
+			Settings.windowWidth = this.ActualWidth;
+			Settings.windowHeight = this.ActualHeight;
+
+			// Change global image settings
+			_blackBackgroundConstant.Width = Settings.windowWidth;
+			_blackBackgroundConstant.Height = Settings.windowHeight;
+			_backgroundImage.Width = Settings.windowWidth;
+			_backgroundImage.Height = Settings.windowHeight;
+
+			// Reload screen elements
+			if (Settings.inGame)
+			{
+				ClearViewport(false);
+				NewGame(false);
+				LoadSurroundingsFromEnvironment(_environment);
+			}
+			else
+			{
+				MainMenu(true, false);
+			}
 		}
 	}
 }

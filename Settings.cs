@@ -44,6 +44,7 @@ namespace VNet
 		 */
 		public static double windowWidth = 1280;
 		public static double windowHeight = 720;
+		public static bool gameLoaded = false;
 		public static bool textDisplayedFully;
 		public static bool executeNext;
 		public static bool inGame;

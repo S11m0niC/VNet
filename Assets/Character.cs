@@ -15,11 +15,17 @@ namespace VNet.Assets
 		public string abbreviation;
 		public List<Mood> moods;
 
+		public double heightCoefficient;
+		public int horizontalOffset;
+		public int verticalOffset;
+
 		public Character(string name)
 		{
 			this.name = name;
 			color = Colors.White;
 			moods = new List<Mood>();
+			horizontalOffset = 0;
+			verticalOffset = 0;
 		}
 
 		public Character(string name, string imagePath)
@@ -27,6 +33,8 @@ namespace VNet.Assets
 			this.name = name;
 			color = Colors.White;
 			moods = new List<Mood> {new Mood("default", imagePath)};
+			horizontalOffset = 0;
+			verticalOffset = 0;
 		}
 
 		public Character(string name, string moodName, string imagePath)
@@ -34,6 +42,8 @@ namespace VNet.Assets
 			this.name = name;
 			color = Colors.White;
 			moods = new List<Mood> {new Mood(moodName, imagePath)};
+			horizontalOffset = 0;
+			verticalOffset = 0;
 		}
 
 		public void AddMoodImage(string moodName, string imagePath)
@@ -46,11 +56,16 @@ namespace VNet.Assets
 	{
 		public string name;
 		public Uri imageUri;
+		public double heightInPixels;
+		public double widthInPixels;
 
 		public Mood(string name, string imagePath)
 		{
 			this.name = name;
 			this.imageUri = new Uri(imagePath, UriKind.Absolute);
+			BitmapImage image = new BitmapImage(imageUri);
+			this.heightInPixels = image.PixelHeight;
+			this.widthInPixels = image.PixelWidth;
 		}
 	}
 }

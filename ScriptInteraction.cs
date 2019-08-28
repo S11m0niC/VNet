@@ -167,11 +167,33 @@ namespace VNet
 					break;
 
 				case "character":
-					if (command.Count == 4 && command.Contains("abbreviation"))
+					if (command.Count == 4)
 					{
-						_assets.AddAbbreviationToCharacter(command[1], command[3]);
-						break;
+						if (command.Contains("abbreviation"))
+						{
+							_assets.AddAbbreviationToCharacter(command[1], command[3]);
+							break;
+						}
+
+						if (command.Contains("height"))
+						{
+							_assets.SetCharacterHeight(command[1], command[3]);
+							break;
+						}
+
+						if (command.Contains("horizontalOffset"))
+						{
+							_assets.SetCharacterOffset(command[1], command[3], false);
+							break;
+						}
+
+						if (command.Contains("verticalOffset"))
+						{
+							_assets.SetCharacterOffset(command[1], command[3], true);
+							break;
+						}
 					}
+					
 					switch (command.Count)
 					{
 						case 4:

@@ -8,7 +8,8 @@
         Title="VNet" Height="720" Width="1280" ResizeMode="CanMinimize"
         MouseLeftButtonUp="Game_OnMouseLeftButtonUp"
         MouseRightButtonUp="Game_OnMouseRightButtonUp"
-        Loaded="Game_OnLoaded">
+        Loaded="Game_OnLoaded"
+        SizeChanged="Game_OnSizeChanged">
     <Canvas Name="ViewportContainer">
         
     </Canvas>
