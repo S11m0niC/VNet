@@ -442,6 +442,7 @@ namespace VNet
 					break;
 
 				case "end":
+					Settings.executeNext = false;
 					EndGame();
 					break;
 

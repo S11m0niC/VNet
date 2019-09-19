@@ -1255,6 +1255,9 @@ namespace VNet
 			ClearViewport(true);
 			currentScriptIndex = 0;
 			_scripts[currentScriptIndex].currentLine = _scripts[currentScriptIndex].firstGameplayLine;
+			_assets.variables.Clear();
+			Settings.inGame = false;
+			Settings.allowProgress = false;
 			MainMenu(true, true);
 		}
 
